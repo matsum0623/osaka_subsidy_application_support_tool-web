@@ -10,9 +10,15 @@ import {
 import { LinksFunction } from "@remix-run/node";
 import stylesheet from "./globals.css?url"
 import { Amplify } from "aws-amplify"
-import awsExports from '~/aws-exports';
 import { Loading } from "./components/util";
-Amplify.configure(awsExports);
+Amplify.configure({
+  Auth: {
+      Cognito: {
+          userPoolId: process.env.USER_POOL_ID || "",
+          userPoolClientId: process.env.USER_POOL_CLIENT_ID || ""
+      }
+  }
+});
 
 export const meta: MetaFunction = () => {
   return [
