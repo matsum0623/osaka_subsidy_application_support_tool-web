@@ -3,8 +3,9 @@ frontend:
   phases:
     build:
       commands:
+        - echo $REST_API
         - npm install
-        - npm run build:$BUILD_ENV
+        - npm run build
   artifacts:
     baseDirectory: build/client
     files:
