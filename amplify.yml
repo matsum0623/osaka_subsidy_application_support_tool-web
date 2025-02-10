@@ -3,11 +3,8 @@ frontend:
   phases:
     build:
       commands:
-        - "npm install"
-        - echo "REST_API=$REST_API" >> .env
-        - echo "USER_POOL_CLIENT_ID=$USER_POOL_CLIENT_ID" >> .env
-        - echo "USER_POOL_ID=$USER_POOL_ID" >> .env
-        - "npm run build"
+        - npm install
+        - npm run build:$BUILD_ENV
   artifacts:
     baseDirectory: build/client
     files:
