@@ -3,9 +3,11 @@ frontend:
   phases:
     build:
       commands:
-        - echo $REST_API
         - npm install
-        - npm run build
+        - echo "VITE_REST_API=$REST_API" >> .env
+        - echo "VITE_USER_POOL_CLIENT_ID=$USER_POOL_CLIENT_ID" >> .env
+        - echo "VITE_USER_POOL_ID=$USER_POOL_ID" >> .env
+        - npm run build:$BUILD_ENV
   artifacts:
     baseDirectory: build/client
     files:

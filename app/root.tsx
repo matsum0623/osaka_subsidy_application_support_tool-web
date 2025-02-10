@@ -14,8 +14,8 @@ import { Loading } from "./components/util";
 Amplify.configure({
   Auth: {
       Cognito: {
-          userPoolId: process.env.USER_POOL_ID || "",
-          userPoolClientId: process.env.USER_POOL_CLIENT_ID || ""
+          userPoolId: import.meta.env.VITE_USER_POOL_ID || "",
+          userPoolClientId: import.meta.env.VITE_USER_POOL_CLIENT_ID || ""
       }
   }
 });

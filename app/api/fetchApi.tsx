@@ -37,7 +37,7 @@ export class NotFoundError extends CustomBaseError{
 }
 
 export async function fetchApi(path:string, opt:object) {
-    return await fetch(process.env.REST_API + path, opt)
+    return await fetch(import.meta.env.VITE_REST_API + path, opt)
     .then(response => {
         if(response.status == 200){
             return response.json().then(j => j.data)
