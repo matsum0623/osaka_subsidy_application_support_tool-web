@@ -79,7 +79,7 @@ export default function Index() {
       }
     })
     if(confirm_sign_in_res.nextStep.signInStep === "DONE"){
-      return redirect(`/`,);
+      return navigate(`/monthly`,);
     }else if(confirm_sign_in_res.nextStep.signInStep == 'invalid'){
       setIsInvalid(true)
     }else{

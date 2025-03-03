@@ -6,6 +6,7 @@ import {
   Form,
   useMatches,
   useNavigation,
+  redirect,
 } from "@remix-run/react";
 import { getData } from "~/api/fetchApi";
 import { Header } from "~/components/header";
@@ -19,6 +20,9 @@ export const clientLoader = async ({
 }: ClientLoaderFunctionArgs) => {
   const idToken = getLs('idToken') || ''
   const data = JSON.parse(getLs('user_data') || '{}')
+  if(data.user_data.after_schools.length == 0){
+    return data.user_data.admin ? redirect('/admin') : redirect(`/after_school_settings`)
+  }
   data.idToken = idToken
   data.ym = (!params.ym || !params.school_id) ? viewMonth() : params.ym
   data.school_id = (!params.ym || !params.school_id) ? data.user_data.after_schools[0].school_id : params.school_id

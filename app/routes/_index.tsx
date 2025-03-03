@@ -14,7 +14,7 @@ export const clientLoader = async () => {
   const user_data = await getData("/user", idToken)
   setLs('idToken', idToken || '');
   setLs('user_data', JSON.stringify(user_data));
-return redirect('/monthly/')
+  return redirect('/monthly/')
 };
 
 export const clientAction = async() => {}
