@@ -14,7 +14,6 @@ export const clientLoader = async () => {
   data.idToken = idToken
   data.user_id = user_id
   data.after_schools = await getData("/after_school", idToken)
-  data.users = await getData("/users", idToken)
   return data
 };
 
