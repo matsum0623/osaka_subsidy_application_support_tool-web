@@ -22,6 +22,7 @@ export const clientLoader = async ({
     try {
       const data = await getData(`/after_school/${params.school_id}`, idToken)
       data.idToken = idToken
+      data.create = params.school_id == 'new'
       return data
     } catch (error) {
       return redirect(`/`)
@@ -125,7 +126,7 @@ export default function Index() {
       <Form method="post">
         <div className="flex my-2">
           <div>
-            <p className="text-2xl font-bold">学童情報修正</p>
+            <p className="text-2xl font-bold">学童{data.create ? "追加" : "修正"}</p>
           </div>
         </div>
         <div className="mt-2 px-5">
@@ -194,14 +195,14 @@ export default function Index() {
               </tbody>
             </table>
           </div>
-          <div className="mt-4">
+          <div className={"mt-4" + (data.create ? " hidden" : "")}>
             <label htmlFor="InstructorCount" className="text-xl">指導員数</label>
             <button type="button" className="btn btn-primary ml-3" onClick={EditInstructors}>指導員編集</button>
             <input type="text" className="input-default mt-1" id="InstructorCount" defaultValue={data.instructor_num} disabled/>
           </div>
           <div className="mt-4">
             <label htmlFor="ChildrenCount" className="text-xl">開所タイプ</label>
-            <button type="button" className="btn btn-primary ml-6" onClick={EditHoliday}>休日設定</button>
+            <button type="button" className={"btn btn-primary ml-6" + (data.create ? " hidden" : "")} onClick={EditHoliday}>休日設定</button>
             <table className="mt-1">
               <thead>
                 <tr>
