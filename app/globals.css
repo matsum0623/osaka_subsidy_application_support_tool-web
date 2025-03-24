@@ -147,6 +147,10 @@
   .icon-del::-webkit-calendar-picker-indicator {
     display: none;
   }
+
+  .max-h-200 {
+    max-height: 50rem;
+  }
 }
 
 
