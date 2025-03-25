@@ -33,6 +33,7 @@ export default function Index() {
   }
 
   const [is_loading, setIsLoading] = useState('')
+  const [view_retirement, setViewRetirement] = useState(false)
 
   const navigate = useNavigate()
 
@@ -126,7 +127,11 @@ export default function Index() {
         <div>
           <p className="text-2xl font-bold">指導員情報</p>
         </div>
-        <div className="col text-right mr-5">
+        <div className="flex mr-5">
+          <div className="mr-16 my-1 text-xl">
+            <input type="checkbox" id="view_retirement" className="scale-150" onChange={() => setViewRetirement(!view_retirement)}/>
+            <label htmlFor="view_retirement" className="ml-2">退職職員表示</label>
+          </div>
           <button type="button" value={"戻る"} className="btn-danger" onClick={() => navigate('/admin/after_school/' + data.school_id)}>戻る</button>
         </div>
       </div>
@@ -145,7 +150,7 @@ export default function Index() {
           </tr>
         </thead>
         <tbody>
-          {data.instructors.map((ins:any) => (
+          {data.instructors.filter((ins:any) => (view_retirement || !ins.retirement_date)).map((ins:any) => (
             <tr key={ins.id} className={ins.retirement_date && "bg-gray-300"}>
               <td className="align-middle">{ins.id}</td>
               <td className="align-middle">{ins.name}</td>
