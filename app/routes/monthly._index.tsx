@@ -109,6 +109,7 @@ export default function Index() {
               </th>
               <th colSpan={2}>開所時職員数</th>
               <th colSpan={2}>閉所時職員数</th>
+              <th rowSpan={2}>加配</th>
               <th rowSpan={2}>開所<br/>閉所</th>
               <th rowSpan={2}>配置</th>
               <th rowSpan={2}></th>
@@ -157,6 +158,7 @@ export default function Index() {
               <td className="hidden sm:table-cell">{check_row(i) ? i[8]  : ''}</td>
               <td className="hidden sm:table-cell">{check_row(i) ? i[9]  : ''}</td>
               <td className="hidden sm:table-cell">{check_row(i) ? i[10] : ''}</td>
+              <td className="hidden sm:table-cell">{i[12] ? i[13] : ''}</td>
               <td>
                 <span className={(i[7] + i[8] >= 2 && i[9] + i[10] >= 2) ? 'text-green-500' : 'text-red-500 font-bold'}>
                   {check_row(i) ? (i[3] >= 0 ? ((i[7] + i[8] >= 2 && i[9] + i[10] >= 2)  ? 'OK' : 'NG') : '') : ''}
