@@ -109,6 +109,17 @@ export default function Index() {
     setIsLoading("idle")
   }
 
+  const downloadSummary = async (output_type:string = 'monthly_report') => {
+    setIsLoading("loading")
+    const report_data = await getData(`/monthly/download/summary?year=2024&school_id=${search_school_id}`, data.idToken)
+    const link = anchorRef.current
+    if (link) {
+      link.setAttribute('href', report_data.url)
+      link.click()
+    }
+    setIsLoading("idle")
+  }
+
   const navigation = useNavigation()
 
   return (
@@ -117,7 +128,7 @@ export default function Index() {
       {Header(data.user_data)}
       {
         (matches.length < 3 || (matches.length == 3 && !matches[2].pathname.includes('/edit/'))) &&
-        <div className="flex justify-between bg-white border-t-2 sticky top-12 sm:top-20">
+        <div className="flex justify-between bg-white border-t-2 sticky top-10 sm:top-20">
           <Form>
             <div className="flex">
               <div className="p-2">
@@ -149,6 +160,14 @@ export default function Index() {
                   勤務表ダウンロード
               </button>
             </div>
+            {/*
+            <div className="ms-auto p-2 hidden sm:block">
+              <button type="button" onClick={() => downloadSummary()}
+                className="btn-download">
+                  資料ダウンロード
+              </button>
+            </div>
+            */}
             <a ref={anchorRef} className='hidden' download={'テストファイル'}></a>
           </div>
         </div>

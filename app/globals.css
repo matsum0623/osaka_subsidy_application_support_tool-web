@@ -151,6 +151,30 @@
   .max-h-200 {
     max-height: 50rem;
   }
+
+  .row-top > th,td {
+    @apply border-b-0
+  }
+
+  .row-middle > th {
+    @apply border-b-0
+  }
+  .row-middle > td {
+    @apply border-b-0
+  }
+  .row-no-top-border > td {
+    @apply border-b-0
+  }
+  .col-no-right-border {
+    @apply border-r-0
+  }
+
+  .top-monthly-header-sm {
+    top: 8.8rem;
+  }
+  .top-monthly-header {
+    top: 101px;
+  }
 }
 
 

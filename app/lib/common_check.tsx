@@ -118,3 +118,13 @@ export function checkInstructor(instData: any, open:any, close:any) {
         excess_shortage: excess_shortage,
     }
 }
+
+/**
+ * 数値チェック。Integerに変換し1以上であればその値を返す。
+ * それ以外は0を返す。
+ * @param val string
+ * @returns number
+ */
+export function check_int_plus(val:string): number {
+    return parseInt(val) > 0 ? parseInt(val)  : 0
+}
