@@ -156,7 +156,7 @@ export default function Index() {
 
   return (
     <div>
-      <div className="bg-white flex justify-between border-t-2 sticky top-12 sm:top-20 pt-2">
+      <div className="bg-white flex justify-between sticky top-0 sm:top-0 pt-2">
         <div className="text-base sm:text-2xl flex gap-3 justify-center sm:justify-start">
           <div className="flex">
             <input type="date" value={context.edit_date} onChange={(e) => context.setEditParams(context.search_school_id, e.target.value)} className="input-default sm:text-xl sm:py-1" />

@@ -7,11 +7,11 @@ import {
   useMatches,
   useNavigation,
   redirect,
+  Link,
 } from "@remix-run/react";
 import { getData } from "~/api/fetchApi";
-import { Header } from "~/components/header";
 import { useRef, useState } from "react";
-import { Loading, viewMonth, viewMonthList } from "~/components/util";
+import { downloadYearList, Loading, viewMonth, viewMonthList } from "~/components/util";
 import { getLs } from "~/lib/ls";
 import { checkInstructor } from "~/lib/common_check";
 
@@ -36,6 +36,9 @@ export const clientLoader = async ({
 
   // 月初のデータを取得
   data.daily_data = await getData(`/monthly/daily?date=${data.ym}-01&school_id=${data.school_id}`, idToken)
+
+  // ダウンロード用の年度を作成、過去3年
+  data.download_y_list = downloadYearList()
 
   return data
 };
@@ -66,6 +69,11 @@ export default function Index() {
   const [instChk, setInstChk] = useState(check_inst.check)
 
   const [is_loading, setIsLoading] = useState("idle")
+
+  const [open_download, setOpenDownload] = useState(false)
+  const [download_type, setDownloadType] = useState('1')
+  const [download_y, setDownloadY] = useState(data.download_y_list[0])
+  const [download_ym, setDownloadYM] = useState(data.ym)
 
   const changeParams = async (ym:string, school_id:string) => {
     setIsLoading("loading")
@@ -100,7 +108,7 @@ export default function Index() {
   const anchorRef = useRef<HTMLAnchorElement>(null)
   const downloadMonthlyReport = async (output_type:string = 'monthly_report') => {
     setIsLoading("loading")
-    const report_data = await getData(`/monthly/download?ym=${search_ym}&school_id=${search_school_id}&type=${output_type}`, data.idToken)
+    const report_data = await getData(`/monthly/download?ym=${download_ym}&school_id=${search_school_id}&type=${output_type}`, data.idToken)
     const link = anchorRef.current
     if (link) {
       link.setAttribute('href', report_data.url)
@@ -111,7 +119,7 @@ export default function Index() {
 
   const downloadSummary = async (output_type:string = 'monthly_report') => {
     setIsLoading("loading")
-    const report_data = await getData(`/monthly/download/summary?year=2024&school_id=${search_school_id}`, data.idToken)
+    const report_data = await getData(`/monthly/download/summary?year=${download_y}&school_id=${search_school_id}`, data.idToken)
     const link = anchorRef.current
     if (link) {
       link.setAttribute('href', report_data.url)
@@ -120,87 +128,167 @@ export default function Index() {
     setIsLoading("idle")
   }
 
+  const downloadSubmit = async (e:any) => {
+    switch (download_type) {
+      case '1':
+        await downloadMonthlyReport()
+        break
+      case '2':
+        await downloadMonthlyReport('work_schedule')
+        break
+      case '3':
+        await downloadSummary()
+        break
+      default:
+        break
+    }
+  }
+
   const navigation = useNavigation()
 
   return (
-    <div>
-      {Loading((navigation.state == 'loading' || navigation.state == 'submitting') ? navigation : {state: is_loading})}
-      {Header(data.user_data)}
-      {
-        (matches.length < 3 || (matches.length == 3 && !matches[2].pathname.includes('/edit/'))) &&
-        <div className="flex justify-between bg-white border-t-2 sticky top-10 sm:top-20">
-          <Form>
+    <>
+      <div>
+        {Loading((navigation.state == 'loading' || navigation.state == 'submitting') ? navigation : {state: is_loading})}
+        {
+          (matches.length < 3 || (matches.length == 3 && !matches[2].pathname.includes('/edit/'))) &&
+          <div className="flex justify-between bg-white sticky top-0">
+            <Form>
+              <div className="flex">
+                <div className="py-2 sm:p-2">
+                  <select name="school_id" className="select" value={search_school_id} onChange={(e) => changeParams(search_ym ,e.target.value)}>
+                    {data.user_data.after_schools.map((item:any) => (
+                      <option key={item.school_id} value={item.school_id}>{item.school_id + ':' + item.school_name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="py-2 sm:p-2">
+                  <select name="ym" className="select" value={search_ym} onChange={(e) => changeParams(e.target.value, search_school_id)}>
+                    {data.ym_list.map((item:any) => (
+                      <option key={item.value} value={item.value}>{item.value.split('-').join('年') + '月' + (item.confirm ? ' 確定済み' : '')}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="ms-auto p-2 hidden sm:block sm:ml-4">
+                  <button type="button" onClick={() => setOpenDownload(true)}
+                    className="btn-download">
+                      資料ダウンロード
+                  </button>
+                </div>
+              </div>
+            </Form>
             <div className="flex">
-              <div className="p-2">
-                <select name="school_id" className="select" value={search_school_id} onChange={(e) => changeParams(search_ym ,e.target.value)}>
-                  {data.user_data.after_schools.map((item:any) => (
-                    <option key={item.school_id} value={item.school_id}>{item.school_id + ':' + item.school_name}</option>
-                  ))}
-                </select>
+              <a ref={anchorRef} className='hidden' download={'テストファイル'}></a>
+              <div className="ms-auto p-2 hidden sm:flex sm:gap-4">
+                <div>
+                  {
+                    data.user_data.admin &&
+                    <Link to="/admin" className="hidden sm:flex text-sm sm:text-xl font-semibold leading-6 text-gray-900 underline sm:py-2">管理画面</Link>
+                  }
+                  {
+                    !data.user_data.admin &&
+                    <Link to="/after_school_settings" className="hidden sm:flex text-sm sm:text-xl font-semibold leading-6 text-gray-900 underline sm:py-2">学童設定</Link>
+                  }
+                </div>
+                <div className="flex sm:flex-1 sm:justify-end">
+                  <Link to="/logout" className="text-sm sm:text-xl text-red-500 font-semibold leading-6 sm:py-2">ログアウト</Link>
+                </div>
               </div>
-              <div className="p-2">
-                <select name="ym" className="select" value={search_ym} onChange={(e) => changeParams(e.target.value, search_school_id)}>
-                  {data.ym_list.map((item:any) => (
-                    <option key={item.value} value={item.value}>{item.value.split('-').join('年') + '月' + (item.confirm ? ' 確定済み' : '')}</option>
-                  ))}
-                </select>
-              </div>
             </div>
-          </Form>
-          <div className="flex">
-            <div className="ms-auto p-2 hidden sm:block">
-              <button type="button" onClick={() => downloadMonthlyReport()}
-                className="btn-download">
-                  報告書ダウンロード
-              </button>
-            </div>
-            <div className="ms-auto p-2 hidden sm:block">
-              <button type="button" onClick={() => downloadMonthlyReport('work_schedule')}
-                className="btn-download">
-                  勤務表ダウンロード
-              </button>
-            </div>
-            {/*
-            <div className="ms-auto p-2 hidden sm:block">
-              <button type="button" onClick={() => downloadSummary()}
-                className="btn-download">
+          </div>
+        }
+        <Outlet context={{
+          id_token: data.idToken,
+          search_school_id: search_school_id,
+          search_ym: search_ym,
+          edit_school_id: edit_school_id,
+          edit_date: edit_date,
+          search_results: search_results,
+          config: data.config,
+          holidays: holidays,
+          instructors: instructors,
+          sum_hours: sum_hours,
+          open_type: open_type,
+          open_time: open_time,
+          children_sum: children_sum,
+          children_disability: children_disability,
+          children_medical_care: children_medical_care,
+          instChk: instChk,
+          setEditParams: setEditParams,
+          changeParams: changeParams,
+          setInstructors: setInstructors,
+          setOpenType: setOpenType,
+          setOpenTime: setOpenTime,
+          setChildrenSum: setChildrenSum,
+          setChildrenDisability: setChildrenDisability,
+          setChildrenMedicalCare: setChildrenMedicalCare,
+          setSumHours: setSumHours,
+          setIsLoading: setIsLoading,
+          setInstChk: setInstChk,
+        }}/>
+      </div>
+      {/** ユーザ追加・編集ダイアログ */}
+      <div id="edit-modal" tabIndex={-1}
+        className={(open_download ? "block" : "hidden") + " modal-back-ground"}
+        onClick={(e) => {
+          if((e.target as HTMLElement).id == 'edit-modal'){
+            setOpenDownload(false)
+          }
+        }}>
+        <div className="modal-dialog">
+          <div className="modal-content">
+            <Form onSubmit={(e) => downloadSubmit(e)}>
+              <div className="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
                   資料ダウンロード
-              </button>
-            </div>
-            */}
-            <a ref={anchorRef} className='hidden' download={'テストファイル'}></a>
+                </h3>
+                <button type="button" className="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white" onClick={() => setOpenDownload(false)}>
+                  <svg className="w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                    <path stroke="currentColor" strokeLinecap={"round"} strokeLinejoin={"round"} strokeWidth={2} d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                  </svg>
+                  <span className="sr-only">Close modal</span>
+                </button>
+              </div>
+              <div className="modal-body">
+                <div className="form-group ml-2">
+                  <label htmlFor="download_type" className="form-label">種別：</label>
+                  <span className="radio-inline">
+                    <input id="a" className="form-check-input" type="radio" name="download_type" value={'1'} checked={download_type=='1'} onChange={() => setDownloadType('1')}/>
+                    <label htmlFor="a">月次報告書</label>
+                  </span>
+                  <span className="radio-inline ml-2">
+                    <input id="b" className="form-check-input" type="radio" name="download_type" value={'2'} checked={download_type=='2'} onChange={() => setDownloadType('2')}/>
+                    <label htmlFor="b">勤務表</label>
+                  </span>
+                  <span className="radio-inline ml-2">
+                    <input id="c" className="form-check-input" type="radio" name="download_type" value={'3'} checked={download_type=='3'} onChange={() => setDownloadType('3')}/>
+                    <label htmlFor="c">加配時間</label>
+                  </span>
+                </div>
+                <div className={"form-group ml-2 flex " + (download_type != '3' ? '' : 'hidden')}>
+                  <label htmlFor="download_type" className="form-label py-2">年月：</label>
+                  <select name="download_y" className="select w-1/3" value={download_ym} onChange={(e) => setDownloadYM(e.target.value)}>
+                    {data.ym_list.map((item:any) => (
+                      <option key={item.value} value={item.value}>{item.value.split('-').join('年') + '月' + (item.confirm ? ' 確定済み' : '')}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className={"form-group ml-2 flex " + (download_type == '3' ? '' : 'hidden')} >
+                  <label htmlFor="download_type" className="form-label py-2">年度：</label>
+                  <select name="download_y" className="select w-1/3" value={download_y} onChange={(e) => setDownloadY(e.target.value)}>
+                    {data.download_y_list.map((year:any) => (
+                      <option key={year} value={year}>{year + '年度'}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="submit" className="ms-3 btn-primary w-28" onClick={() => setOpenDownload(false)}>ダウンロード</button>
+              </div>
+            </Form>
           </div>
         </div>
-      }
-      <Outlet context={{
-        id_token: data.idToken,
-        search_school_id: search_school_id,
-        search_ym: search_ym,
-        edit_school_id: edit_school_id,
-        edit_date: edit_date,
-        search_results: search_results,
-        config: data.config,
-        holidays: holidays,
-        instructors: instructors,
-        sum_hours: sum_hours,
-        open_type: open_type,
-        open_time: open_time,
-        children_sum: children_sum,
-        children_disability: children_disability,
-        children_medical_care: children_medical_care,
-        instChk: instChk,
-        setEditParams: setEditParams,
-        changeParams: changeParams,
-        setInstructors: setInstructors,
-        setOpenType: setOpenType,
-        setOpenTime: setOpenTime,
-        setChildrenSum: setChildrenSum,
-        setChildrenDisability: setChildrenDisability,
-        setChildrenMedicalCare: setChildrenMedicalCare,
-        setSumHours: setSumHours,
-        setIsLoading: setIsLoading,
-        setInstChk: setInstChk,
-      }}/>
-    </div>
+      </div>
+    </>
   );
 }

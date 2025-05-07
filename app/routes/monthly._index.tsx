@@ -106,7 +106,7 @@ export default function Index() {
   return (
     <>
       <table className="w-full border-separate border-spacing-0">
-        <thead className="hidden sm:table-header-group sticky top-monthly-header-sm bg-white">
+        <thead className="hidden sm:table-header-group sticky top-monthly-header-sm bg-white z-0">
           <tr className="row-top">
             <th rowSpan={2} className="col-no-right-border">日付</th>
             <th rowSpan={2} className="col-no-right-border">曜日</th>

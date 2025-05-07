@@ -37,6 +37,17 @@ export function viewMonthList() {
   return ym_list
 }
 
+export function downloadYearList() {
+  const today = new Date()
+  const today_year = today.getFullYear()
+  const today_month = today.getMonth() + 1
+  if (today_month <= 3){
+    return [today_year - 1, today_year -2, today_year - 3]
+  }else{
+    return [today_year, today_year - 1, today_year - 2]
+  }
+}
+
 export function createDates(dt:string) {
   const now_dt: Date = new Date(dt);
   const prev_dt: Date = new Date(dt);
