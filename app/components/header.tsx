@@ -6,10 +6,7 @@ export function Header(user_data:any) {
       <header className="bg-white">
         <nav className="mx-auto flex max-w-7xl items-center justify-between p-2 sm:p-6 sm:px-8" aria-label="Global">
           <div className="flex sm:flex-1">
-            <Link to="/" className="-m-1.5 p-1.5">
-              <span className="sr-only">月次報告作成サイト</span>
-              <img className="h-8 w-auto" src="https://tailwindui.com/plus/img/logos/mark.svg?color=indigo&shade=600" alt=""/>
-              </Link>
+            <span className="hidden sm:block text-2xl">月次報告作成サイト</span>
           </div>
           <div className='flex gap-9'>
             <div className="flex sm:gap-x-12">
