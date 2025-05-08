@@ -57,5 +57,15 @@ export function createDates(dt:string) {
   return [now_dt, prev_dt, next_dt]
 }
 
-
 export const weekday = ['日', '月', '火', '水', '木', '金', '土', ]
+
+export function closeButton(closeFunc: (arg0: boolean) => void) {
+  return (
+    <button type="button" className="btn-close" onClick={() => closeFunc(false)}>
+      <svg className="w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+        <path stroke="currentColor" strokeLinecap={"round"} strokeLinejoin={"round"} strokeWidth={2} d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+      </svg>
+      <span className="sr-only">Close modal</span>
+    </button>
+  )
+}
