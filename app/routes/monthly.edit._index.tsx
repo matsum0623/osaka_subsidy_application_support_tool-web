@@ -188,7 +188,7 @@ export default function Index() {
             setModalOpen(false)
           }
         }}>
-        <div className="modal-dialog max-w-7xl top-0 sm:top-32 p-1 SM-P-4">
+        <div className="modal-dialog max-w-7xl top-0 sm:top-2 p-1 SM-P-4">
           <div className="modal-content">
             <div className="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
