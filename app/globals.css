@@ -156,6 +156,10 @@
     max-height: 50rem;
   }
 
+  .max-h-140 {
+    max-height: 35rem;
+  }
+
   .row-top > th,td {
     @apply border-b-0
   }
@@ -174,10 +178,14 @@
   }
 
   .top-monthly-header-sm {
-    top: 59px;
+    top: 60px;
   }
   .top-monthly-header {
-    top: 59px;
+    top: 60px;
+  }
+
+  .account-table td {
+    @apply border-0 p-0 border-b-2
   }
 }
 

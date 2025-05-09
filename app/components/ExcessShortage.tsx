@@ -91,8 +91,8 @@ export function ExcessShortage(start:string, end:string, instructors: { [key: st
             Object.values(instructors).sort((a:any, b:any) => (a.order - b.order)).map((inst: any) => {
               return (
                 <tr key={'es' + inst.id}>
-                  <td className="table-cell sm:hidden px-0">{inst.name.slice(0,2)}</td>
-                  <td className="hidden sm:table-cell">{inst.name}</td>
+                  <td className="table-cell sm:hidden px-0 py-1">{inst.name.slice(0,2)}</td>
+                  <td className="hidden sm:table-cell py-1">{inst.name}</td>
                   {Object.keys(excess_shortage_config).sort((a:any, b:any) => (a - b)).map((key:string) => {
                     return excess_shortage_config[key].map((time:any) => {
                       return <td className={check_cell_class(inst.start, inst.end, time[0], time[1], inst.qualification, inst.additional_check) + " px-0 sm:p-2"} key={time[0]}></td>
@@ -103,7 +103,7 @@ export function ExcessShortage(start:string, end:string, instructors: { [key: st
             })
           }
           <tr className="border-t-4" key='es_inst'>
-            <td>
+            <td className="py-1">
               <span className="hidden sm:block">過不足(指)</span>
               <span className="sm:hidden">指</span>
             </td>
@@ -114,7 +114,7 @@ export function ExcessShortage(start:string, end:string, instructors: { [key: st
             })}
           </tr>
           <tr key='es_sub'>
-            <td>
+            <td className="py-1">
               <span className="hidden sm:block">過不足(補)</span>
               <span className="sm:hidden">補</span>
             </td>
