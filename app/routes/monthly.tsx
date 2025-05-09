@@ -247,7 +247,7 @@ export default function Index() {
                 </div>
                 <div className="flex sm:flex-1 sm:justify-end">
                   <button type="button" className="text-sm sm:text-xl font-semibold leading-6 text-gray-900" onClick={() => setOpenAccount(!open_account)}>アカウント</button>
-                  <div className="absolute bg-white border-2 border-gray-300 top-11 px-3 py-2" hidden={!open_account}>
+                  <div className="absolute bg-white border-2 border-gray-300 top-11 px-3 py-2 rounded-lg" hidden={!open_account}>
                     <table className="table-auto text-sm sm:text-xl leading-6 text-gray-900 account-table">
                       <tbody>
                         <tr>
