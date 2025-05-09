@@ -14,6 +14,7 @@ import { useRef, useState } from "react";
 import { downloadYearList, Loading, viewMonth, viewMonthList } from "~/components/util";
 import { getLs } from "~/lib/ls";
 import { checkInstructor } from "~/lib/common_check";
+import { AccountHeader } from "~/components/header";
 
 export const clientLoader = async ({
   params,
@@ -152,7 +153,7 @@ export default function Index() {
         {Loading((navigation.state == 'loading' || navigation.state == 'submitting') ? navigation : {state: is_loading})}
         {
           (matches.length < 3 || (matches.length == 3 && !matches[2].pathname.includes('/edit/'))) &&
-          <div className="flex justify-between bg-white sticky top-0">
+          <div className="flex justify-between bg-white sticky top-0 z-10">
             <Form>
               <div className="flex">
                 <div className="py-2 sm:p-2">
@@ -190,9 +191,7 @@ export default function Index() {
                     <Link to="/after_school_settings" className="hidden sm:flex text-sm sm:text-xl font-semibold leading-6 text-gray-900 underline sm:py-2">学童設定</Link>
                   }
                 </div>
-                <div className="flex sm:flex-1 sm:justify-end">
-                  <Link to="/logout" className="text-sm sm:text-xl text-red-500 font-semibold leading-6 sm:py-2">ログアウト</Link>
-                </div>
+                {AccountHeader()}
               </div>
             </div>
           </div>
@@ -227,7 +226,8 @@ export default function Index() {
           setInstChk: setInstChk,
         }}/>
       </div>
-      {/** ユーザ追加・編集ダイアログ */}
+
+      {/** 資料ダウンロードダイアログ */}
       <div id="edit-modal" tabIndex={-1}
         className={(open_download ? "block" : "hidden") + " modal-back-ground"}
         onClick={(e) => {
