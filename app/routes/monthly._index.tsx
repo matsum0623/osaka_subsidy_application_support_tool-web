@@ -186,6 +186,7 @@ export default function Index() {
           ))}
         </tbody>
       </table>
+
       {/** 児童数一括登録ダイアログ */}
       <div id="all-date-input-modal" tabIndex={-1}
         className={(children_input_modal_open ? "block" : "hidden") + " modal-back-ground"}
@@ -202,7 +203,7 @@ export default function Index() {
             <span className="sr-only">Loading...</span>
           </div>
         </div>}
-        <div className="modal-dialog max-w-6xl">
+        <div className="modal-dialog max-w-6xl top-2">
           <div className="modal-content">
             <Form onSubmit={(e) => handleSubmit(e)}>
               <div className="flex items-center justify-between p-4 md:p-5 rounded-t dark:border-gray-600">
@@ -217,33 +218,33 @@ export default function Index() {
                 </button>
               </div>
 
-              <div className="modal-body max-h-200 overflow-auto p-0">
+              <div className="modal-body max-h-140 overflow-auto p-0">
                 <table className="w-full border-separate border-spacing-0">
                   <thead className="hidden sm:table-header-group sticky top-0 bg-white">
                     <tr className="row-top">
-                        <th rowSpan={2} className="col-no-right-border">日付</th>
-                        <th rowSpan={2} className="col-no-right-border">曜日</th>
-                        <th rowSpan={2} className="col-no-right-border">開所<br/>種別</th>
-                        <th colSpan={3}>児童数</th>
+                        <th rowSpan={2} className="col-no-right-border py-1">日付</th>
+                        <th rowSpan={2} className="col-no-right-border py-1">曜日</th>
+                        <th rowSpan={2} className="col-no-right-border py-1">開所<br/>種別</th>
+                        <th colSpan={3} className="py-1">児童数</th>
                     </tr>
                     <tr className="row-middle">
-                        <th className="col-no-right-border">合計</th>
-                        <th className="col-no-right-border">内、障がい児</th>
-                        <th>内、医ケア児</th>
+                        <th className="col-no-right-border py-1">合計</th>
+                        <th className="col-no-right-border py-1">内、障がい児</th>
+                        <th className="py-1">内、医ケア児</th>
                     </tr>
                     <tr key={'summary'} className="row-middle">
-                      <td colSpan={3}  className="col-no-right-border">合計</td>
-                      <td className="col-no-right-border">{child_summary['children']}</td>
-                      <td className="col-no-right-border">{child_summary['disability']}</td>
-                      <td>{child_summary['medical_care']}</td>
+                      <td colSpan={3}  className="col-no-right-border py-1">合計</td>
+                      <td className="col-no-right-border py-1">{child_summary['children']}</td>
+                      <td className="col-no-right-border py-1">{child_summary['disability']}</td>
+                      <td className="py-1">{child_summary['medical_care']}</td>
                     </tr>
                   </thead>
                   <tbody>
                     {Object.values(context.search_results)?.map((i:any) => (
                       <tr key={i[0]} className={"row-middle " + bg_color_weekday(i[0], i[2])}>
-                        <td className="table-cell col-no-right-border">{i[1]}</td>
-                        <td className="table-cell col-no-right-border">{weekday[i[2]]}</td>
-                        <td className="table-cell col-no-right-border">
+                        <td className="table-cell col-no-right-border py-1">{i[1]}</td>
+                        <td className="table-cell col-no-right-border py-1">{weekday[i[2]]}</td>
+                        <td className="table-cell col-no-right-border py-1">
                           <select className="py-2 sm:px-2 text-sm" name={i[0] + "|open_type"} defaultValue={i[3]}>
                             <option value="" key="none"></option>
                             {
@@ -254,9 +255,9 @@ export default function Index() {
                             <option value={9} key={9}>{"日曜加算"}</option>
                           </select>
                         </td>
-                        <td className="table-cell col-no-right-border"><input className="text-right input-default" name={i[0] + "|children"} type="number" defaultValue={i[4]}/></td>
-                        <td className="table-cell col-no-right-border"><input className="text-right input-default" name={i[0] + "|disability"} type="number" defaultValue={i[5]}/></td>
-                        <td className="table-cell"><input className="text-right input-default" name={i[0] + "|medical_care"} type="number" defaultValue={i[6]}/></td>
+                        <td className="table-cell col-no-right-border py-1"><input className="text-right input-default" name={i[0] + "|children"} type="number" defaultValue={i[4]}/></td>
+                        <td className="table-cell col-no-right-border py-1"><input className="text-right input-default" name={i[0] + "|disability"} type="number" defaultValue={i[5]}/></td>
+                        <td className="table-cell py-1"><input className="text-right input-default" name={i[0] + "|medical_care"} type="number" defaultValue={i[6]}/></td>
                       </tr>
                     ))}
                   </tbody>
