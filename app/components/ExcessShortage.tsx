@@ -19,13 +19,13 @@ const excess_shortage_cell = (excess_shortage:any, chk_start:string, type:string
     if (excess_shortage[chk_start].shortage.qua > 0){
       return <td className={"bg-red-400 px-0 sm:p-2" + border_right}></td>
     }else if (excess_shortage[chk_start].excess.qua > 0 && excess_shortage[chk_start].sum.num > 2){
-      return <td className={"bg-blue-400 px-0 sm:p-2" + border_right}>{excess_shortage[chk_start].excess.qua}</td>
+      return <td className={"bg-blue-400 px-0 text-xs" + border_right}>{excess_shortage[chk_start].excess.qua}</td>
     }
   } else if (type == 'sub'){
     if ((excess_shortage[chk_start].shortage.num - excess_shortage[chk_start].shortage.qua) > 0){
       return <td className={"bg-red-200 px-0 sm:p-2" + border_right}></td>
     }else if ((excess_shortage[chk_start].excess.num - excess_shortage[chk_start].excess.qua) > 0){
-      return <td className={"bg-blue-200 px-0 sm:p-2" + border_right}>{excess_shortage[chk_start].excess.num - excess_shortage[chk_start].excess.qua}</td>
+      return <td className={"bg-blue-200 px-0 text-xs" + border_right}>{excess_shortage[chk_start].excess.num - excess_shortage[chk_start].excess.qua}</td>
     }
   }
   return <td className={"px-0 sm:p-2" + border_right}></td>
@@ -61,7 +61,7 @@ export function calcExcessShortageConfig(open:any, close:any) {
   return time_dict
 }
 
-export function ExcessShortage(start:string, end:string, instructors: { [key: string]: { start: string, end: string, hours: string, additional_check?: boolean } }, ) {
+export function ExcessShortage(start:string, end:string, instructors: { [key: string]: { start: string, end: string, hours: string, additional_check?: boolean } }, edit_date:string) {
   /** 過不足確認ダイアログ */
   const excess_shortage = checkInstructor(instructors, start, end).excess_shortage
   const excess_shortage_config = calcExcessShortageConfig(start, end)
@@ -81,14 +81,14 @@ export function ExcessShortage(start:string, end:string, instructors: { [key: st
           <tr className="hidden sm:table-row">
             {Object.keys(excess_shortage_config).sort((a:any, b:any) => (a - b)).map((key:string) => {
               return excess_shortage_config[key].map((time:any) => {
-                return <td key={key + time} className="px-0"><span className="hidden sm:block">{time[0].split(':')[1]}</span></td>
+                return <td key={key + time} className="px-0 text-xs"><span className="hidden sm:block">{time[0].split(':')[1]}</span></td>
               })
             })}
           </tr>
         </thead>
         <tbody>
           {
-            Object.values(instructors).sort((a:any, b:any) => (a.order - b.order)).map((inst: any) => {
+            Object.values(instructors).filter((inst:any) => (!inst.retirement_date || edit_date <= inst.retirement_date)).sort((a:any, b:any) => (a.order - b.order)).map((inst: any) => {
               return (
                 <tr key={'es' + inst.id}>
                   <td className="table-cell sm:hidden px-0 py-1">{inst.name.slice(0,2)}</td>

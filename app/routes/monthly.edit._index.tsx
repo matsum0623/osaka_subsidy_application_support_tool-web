@@ -6,7 +6,7 @@ import {
 import React from "react";
 import { useState } from "react";
 import { postData } from "~/api/fetchApi";
-import { ExcessShortage, calcExcessShortageConfig } from "~/components/ExcessShortage";
+import { ExcessShortage } from "~/components/ExcessShortage";
 import { createDates, weekday } from "~/components/util";
 import { checkInstructor } from "~/lib/common_check";
 
@@ -201,7 +201,7 @@ export default function Index() {
                 <span className="sr-only">Close modal</span>
               </button>
             </div>
-            {ExcessShortage(context.open_time.start, context.open_time.end, context.instructors)}
+            {ExcessShortage(context.open_time.start, context.open_time.end, context.instructors, context.edit_date)}
           </div>
         </div>
       </div>
