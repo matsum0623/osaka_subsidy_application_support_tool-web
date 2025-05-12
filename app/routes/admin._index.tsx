@@ -109,7 +109,7 @@ export default function Index() {
 
   return (
     <div className="border-t-2 ">
-      {Loading((navigation.state == 'loading' || navigation.state == 'submitting') ? navigation : {state: is_loading})}
+      {is_loading && Loading()}
       <div className="flex gap-24 mt-2">
         <div className="">
           <p className="text-2xl font-bold">学童一覧</p>

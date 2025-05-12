@@ -1,12 +1,8 @@
 import {
-  useNavigate,
   useLoaderData,
   redirect,
-  useNavigation,
-  Outlet,
 } from "@remix-run/react";
 import { getIdToken } from "~/api/auth";
-import { Loading } from "~/components/util"
 
 export const clientLoader = async () => {
   // データを取ってくる

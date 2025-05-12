@@ -5,7 +5,6 @@ import {
   useNavigation,
 } from "@remix-run/react";
 import { Header } from "~/components/header";
-import { Loading } from "~/components/util";
 import { getLs } from "~/lib/ls";
 
 export const clientLoader = async () => {
@@ -27,7 +26,6 @@ export default function Index() {
 
   return (
     <div>
-      {Loading(useNavigation())}
       {Header(data.user_data)}
       <Outlet context={child_data}/>
     </div>

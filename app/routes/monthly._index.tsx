@@ -1,25 +1,55 @@
-import { Form, useOutletContext } from "@remix-run/react";
-import { useState } from "react";
-import { putData } from "~/api/fetchApi";
-import { weekday } from "~/components/util"
+import { Form, Link, useNavigate, useNavigation, useOutletContext, useSearchParams } from "@remix-run/react";
+import { confirmResetPassword, resetPassword } from "aws-amplify/auth";
+import { useEffect, useRef, useState } from "react";
+import { getData, putData } from "~/api/fetchApi";
+import { closeButton, downloadYearList, Loading, viewMonth, viewMonthList, weekday } from "~/components/util"
 import { check_int_plus } from "~/lib/common_check";
+import { getLs } from "~/lib/ls";
 
 export default function Index() {
   const context: {
     id_token: string,
-    search_ym: string,
-    search_school_id: string,
-    search_results: object[],
-    config: {
-      open_types: any,
-    },
-    holidays: string[],
-    setEditParams(school_id: string, date: string, child:boolean): void,
-    changeParams(ym: string, school_id: string): void,
   } = useOutletContext();
 
+  const user_id = getLs('user_id') ?? ''
+  const user_data = JSON.parse(getLs('user_data') || '{}')
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [search_ym, setSearchYM] = useState(searchParams.get('ym') || viewMonth())
+  const [search_school_id, setSearchSchoolId] = useState(searchParams.get('school_id') || user_data.user_data.after_schools[0].school_id)
+
+  const ym_list = viewMonthList()
+
+  const [view_data, setViewData] = useState({list: []})
+  const [open_types, setOpenTypes] = useState<{ [key: string]: any }>({})
+  const [child_summary, setChildSummary] = useState({
+    'children': 0,
+    'disability': 0,
+    'medical_care': 0,
+    'open_qualification': 0,
+    'open_non_qualification': 0,
+    'close_qualification': 0,
+    'close_non_qualification': 0,
+  })
+  const [holidays, setHolidays] = useState<string[]>([])
+
   const [children_input_modal_open, setChildrenInputModalOpen] = useState(false)
+
+  const [open_download, setOpenDownload] = useState(false)
+  const [download_type, setDownloadType] = useState('1')
+  const download_y_list = downloadYearList()
+  const [download_y, setDownloadY] = useState<number>(download_y_list[0])
+  const [download_ym, setDownloadYM] = useState(search_ym)
+
+  const [open_account, setOpenAccount] = useState(false)
+  const [is_reset_password, setIsResetPassword] = useState(false)
+  const [is_reset_password_confirm, setIsResetPasswordConfirm] = useState(false)
+  const [reset_confirm_username, setResetConfirmUsername] = useState('')
+
   const [is_loading, setIsLoading] = useState(false)
+
+  const navigate = useNavigate();
+
   const handleSubmit = async (e:any) => {
     setIsLoading(true)
     e.preventDefault();
@@ -37,7 +67,7 @@ export default function Index() {
     })
     // 登録済みのデータと比較して変更箇所のみのデータを抜き出す
     const new_children_obj = Object.entries(children_obj).reduce((result:any, [d, v]) => {
-      const old_data = context.search_results.find((i: any) => i[0] == d) as { [key: string]: any } | undefined;
+      const old_data = view_data.list.find((i: any) => i[0] == d) as { [key: string]: any } | undefined;
       if (old_data){
         if (old_data[3] != Number(v['open_type']) || old_data[4] != v['children'] || old_data[5] != v['disability'] || old_data[6] != v['medical_care']){
           result[d] = v
@@ -48,7 +78,7 @@ export default function Index() {
     // 修正が1件でもあれば登録
     if (Object.keys(new_children_obj).length > 0){
       await putData(`/monthly/children`, {
-        school_id: context.search_school_id,
+        school_id: search_school_id,
         data: new_children_obj,
       }, context.id_token)
       alert('登録しました。')
@@ -57,27 +87,8 @@ export default function Index() {
     }
     setIsLoading(false)
     setChildrenInputModalOpen(false)
-    context.changeParams(context.search_ym, context.search_school_id)
+    changeParams(search_ym, search_school_id)
   }
-
-  const child_summary = context.search_results.reduce((result:any, i:any) => {
-    result.children                += check_int_plus(i[4])
-    result.disability              += check_int_plus(i[5])
-    result.medical_care            += check_int_plus(i[6])
-    result.open_qualification      += check_int_plus(i[7])
-    result.open_non_qualification  += check_int_plus(i[8])
-    result.close_qualification     += check_int_plus(i[9])
-    result.close_non_qualification += check_int_plus(i[10])
-    return result;
-  }, {
-    'children': 0,
-    'disability': 0,
-    'medical_care': 0,
-    'open_qualification': 0,
-    'open_non_qualification': 0,
-    'close_qualification': 0,
-    'close_non_qualification': 0,
-  });
 
   const check_row = (i:any) => {
     if (
@@ -96,15 +107,279 @@ export default function Index() {
   const bg_color_weekday = (date:string, weekday:number) => {
     if (weekday == 6){
       return "bg-cyan-100"
-    }else if (weekday == 0 || context.holidays.includes(date)){
+    }else if (weekday == 0 || holidays.includes(date)){
       return "bg-red-100"
     }else{
       return ""
     }
   }
 
+  const search_data = async (ym:string, school_id:string): Promise<any> => {
+    setIsLoading(true)
+    const res = await getData(`/monthly?ym=${ym}&school_id=${school_id}`, context.id_token)
+    setViewData({list: res.list})
+    setOpenTypes(res.config.open_types)
+    setChildSummary(res.list.reduce((result:any, i:any) => {
+      result.children                += check_int_plus(i[4])
+      result.disability              += check_int_plus(i[5])
+      result.medical_care            += check_int_plus(i[6])
+      result.open_qualification      += check_int_plus(i[7])
+      result.open_non_qualification  += check_int_plus(i[8])
+      result.close_qualification     += check_int_plus(i[9])
+      result.close_non_qualification += check_int_plus(i[10])
+      return result;
+    }, {
+      'children': 0,
+      'disability': 0,
+      'medical_care': 0,
+      'open_qualification': 0,
+      'open_non_qualification': 0,
+      'close_qualification': 0,
+      'close_non_qualification': 0,
+    }))
+
+    setHolidays(Object.keys(res.holidays))
+    setIsLoading(false)
+  }
+
+  useEffect(() => {
+    search_data(search_ym, search_school_id)
+  }, [])
+
+  const anchorRef = useRef<HTMLAnchorElement>(null)
+  const downloadMonthlyReport = async (output_type:string = 'monthly_report') => {
+    setIsLoading(true)
+    const report_data = await getData(`/monthly/download?ym=${download_ym}&school_id=${search_school_id}&type=${output_type}`, context.id_token)
+    const link = anchorRef.current
+    if (link) {
+      link.setAttribute('href', report_data.url)
+      link.click()
+    }
+    setIsLoading(false)
+  }
+
+  const downloadSummary = async (output_type:string = 'monthly_report') => {
+    setIsLoading(true)
+    const report_data = await getData(`/monthly/download/summary?year=${download_y}&school_id=${search_school_id}`, context.id_token)
+    const link = anchorRef.current
+    if (link) {
+      link.setAttribute('href', report_data.url)
+      link.click()
+    }
+    setIsLoading(false)
+  }
+
+  const downloadSubmit = async (e:any) => {
+    switch (download_type) {
+      case '1':
+        await downloadMonthlyReport()
+        break
+      case '2':
+        await downloadMonthlyReport('work_schedule')
+        break
+      case '3':
+        await downloadSummary()
+        break
+      default:
+        break
+    }
+  }
+
+  const changeParams = async (ym:string, school_id:string) => {
+    setIsLoading(true)
+    setSearchYM(ym)
+    setSearchSchoolId(school_id)
+    navigate(`/monthly?ym=${ym}&school_id=${school_id}`)
+    await search_data(ym, school_id)
+    setIsLoading(false)
+  }
+
+  const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    try {
+      const reset_result = await resetPassword({ username: user_id })
+      switch (reset_result.nextStep.resetPasswordStep) {
+        case "CONFIRM_RESET_PASSWORD_WITH_CODE":
+          alert(`パスワードリセットのためのコードを${reset_result.nextStep.codeDeliveryDetails.deliveryMedium}に送信しました。\nno-reply@verificationemail.comからのメールを確認してください。`)
+          setResetConfirmUsername(user_id)
+          setIsResetPassword(false)
+          setIsResetPasswordConfirm(true)
+          break
+        case "DONE":
+          alert('パスワードリセットが完了しました。')
+          break
+        default:
+          alert('予期せぬエラーが発生しました。')
+          break
+      }
+    } catch (e) {
+      console.error(e)
+      alert('パスワードリセットに失敗しました。')
+    }
+  }
+
+  const handleResetPasswordConfirm = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+    const reset_code:string = formData.get("verification_code")?.toString() || ''
+    const new_password:string = formData.get("reset_new_password")?.toString() || ''
+    try {
+      const reset_result = await confirmResetPassword(
+        { username: reset_confirm_username,
+          confirmationCode: reset_code,
+          newPassword: new_password,
+        })
+        console.log(reset_result)
+      alert('パスワードリセットが完了しました。')
+      setIsResetPasswordConfirm(false)
+    } catch (e) {
+      console.error(e)
+      alert('パスワードリセットに失敗しました。')
+    }
+  }
+
+  const editPage = (school_id:string, date:string) => {
+    setIsLoading(true)
+    navigate(`/monthly/edit?school_id=${school_id}&date=${date}`)
+    setIsLoading(false)
+  }
+
   return (
     <>
+      {is_loading && Loading()}
+      <div className="flex justify-between bg-white sticky top-0 z-10">
+        <div className="flex">
+          <div className="py-2 sm:p-2">
+            <select name="school_id" className="select" value={search_school_id} onChange={(e) => changeParams(search_ym ,e.target.value)}>
+              {user_data.user_data.after_schools.map((item:any) => (
+                <option key={item.school_id} value={item.school_id}>{item.school_id + ':' + item.school_name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="py-2 sm:p-2">
+            <select name="ym" className="select" value={search_ym} onChange={(e) => changeParams(e.target.value, search_school_id)}>
+              {ym_list.map((item:any) => (
+                <option key={item.value} value={item.value}>{item.value.split('-').join('年') + '月' + (item.confirm ? ' 確定済み' : '')}</option>
+              ))}
+            </select>
+          </div>
+          <div className="ms-auto p-2 hidden sm:block sm:ml-4">
+            <button type="button" onClick={() => setOpenDownload(true)}
+              className="btn-download">
+                資料ダウンロード
+            </button>
+          </div>
+        </div>
+        <div className="flex">
+          <a ref={anchorRef} className='hidden' download={'テストファイル'}></a>
+          <div className="ms-auto p-2 hidden sm:flex sm:gap-4">
+            <div>
+              {
+                user_data.user_data.admin &&
+                <Link to="/admin" className="hidden sm:flex text-sm sm:text-xl font-semibold leading-6 text-gray-900 underline sm:py-2">管理画面</Link>
+              }
+              {
+                !user_data.user_data.admin &&
+                <Link to="/after_school_settings" className="hidden sm:flex text-sm sm:text-xl font-semibold leading-6 text-gray-900 underline sm:py-2">学童設定</Link>
+              }
+            </div>
+            <div className="flex sm:flex-1 sm:justify-end">
+              <button type="button" className="text-sm sm:text-xl font-semibold leading-6 text-gray-900" onClick={() => setOpenAccount(!open_account)}>アカウント</button>
+              <div className="absolute bg-white border-2 border-gray-300 top-11 px-3 py-2 rounded-lg" hidden={!open_account}>
+                <table className="table-auto text-sm sm:text-xl leading-6 text-gray-900 account-table">
+                  <tbody>
+                    <tr>
+                      <td className="text-right">ユーザID：</td>
+                      <td>{user_id}</td>
+                    </tr>
+                    <tr>
+                      <td className="text-right">名前：</td>
+                      <td>{user_data.user_data.user_name}</td>
+                    </tr>
+                    <tr>
+                      <td className="text-right">学童数：</td>
+                      <td>{user_data.user_data.after_schools.length}施設</td>
+                    </tr>
+                    <tr>
+                      <td className="text-right">権限：</td>
+                      <td>{user_data.user_data.admin ? '管理者' : '一般'}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div className="py-1 text-right mt-2"><button type="button" className="text-sm sm:text-xl font-semibold leading-6 text-gray-900" onClick={() => setIsResetPassword(true)}>パスワード変更</button></div>
+                <div className="py-1 text-right"><Link to="/logout" className="text-sm sm:text-xl text-red-500 font-semibold leading-6 sm:py-2" >ログアウト</Link></div>
+              </div>
+
+              {/** パスワードリセットダイアログ */}
+              <div id="reset-modal" tabIndex={-1}
+                className={(is_reset_password ? "block" : "hidden") + " modal-back-ground"}
+                onClick={(e) => {
+                  if((e.target as HTMLElement).id == 'reset-modal'){
+                    setIsResetPassword(false)
+                  }
+                }}>
+                <div className="modal-dialog">
+                  <div className="modal-content">
+                    <Form onSubmit={(e) => handleResetPassword(e)}>
+                      <div className="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
+                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                          パスワード再設定
+                        </h3>
+                        {closeButton(setIsResetPassword)}
+                      </div>
+                      <div className="modal-body">
+                        <div>
+                          <p className="mb-2 text-xl font-medium text-gray-900 dark:text-white">パスワードをリセットしますか？</p>
+                        </div>
+                      </div>
+                      <div className="modal-footer">
+                        <button type="button" className="btn-danger w-28" onClick={() => setIsResetPassword(false)}>キャンセル</button>
+                        <button type="submit" className="ms-3 btn-primary w-28">実行</button>
+                      </div>
+                    </Form>
+                  </div>
+                </div>
+              </div>
+
+              {/** パスワードリセット認証コード入力ダイアログ */}
+              <div id="reset-modal" tabIndex={-1}
+                className={(is_reset_password_confirm ? "block" : "hidden") + " modal-back-ground"}
+                onClick={(e) => {
+                  if((e.target as HTMLElement).id == 'reset-modal'){
+                    setIsResetPasswordConfirm(false)
+                  }
+                }}>
+                <div className="modal-dialog">
+                  <div className="modal-content">
+                    <Form onSubmit={(e) => handleResetPasswordConfirm(e)}>
+                      <div className="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
+                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                          検証コードを入力
+                        </h3>
+                        {closeButton(setIsResetPasswordConfirm)}
+                      </div>
+                      <div className="modal-body">
+                        <div>
+                          <label htmlFor="verification_code" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">検証コード</label>
+                          <input type="text" name="verification_code" id="verification_code" placeholder="検証コード" className="login-input" required/>
+                        </div>
+                        <div>
+                          <label htmlFor="reset_new_password" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">新しいパスワード</label>
+                          <input type="password" name="reset_new_password" id="reset_new_password" placeholder="********" className="login-input" required/>
+                        </div>
+                      </div>
+                      <div className="modal-footer">
+                        <button type="button" className="btn-danger w-28" onClick={() => setIsResetPasswordConfirm(false)}>キャンセル</button>
+                        <button type="submit" className="ms-3 btn-primary w-28">登録</button>
+                      </div>
+                    </Form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       <table className="w-full border-separate border-spacing-0">
         <thead className="hidden sm:table-header-group sticky top-monthly-header-sm bg-white z-0">
           <tr className="row-top">
@@ -155,12 +430,12 @@ export default function Index() {
         </thead>
 
         <tbody>
-          {Object.values(context.search_results)?.map((i:any) => (
+          {Object.values(view_data.list)?.map((i:any) => (
             <tr key={i[0]} className={"row-middle " + bg_color_weekday(i[0], i[2])}>
               <td className="hidden sm:table-cell col-no-right-border">{i[1]}</td>
               <td className="hidden sm:table-cell col-no-right-border">{weekday[i[2]]}</td>
               <td className="table-cell sm:hidden col-no-right-border">{i[1]}（{weekday[i[2]]}）</td>
-              <td className="hidden sm:table-cell col-no-right-border">{check_row(i) ? (i[3] != '9' ? context.config.open_types[i[3]]?.TypeName : '日曜加算') : ''}</td>
+              <td className="hidden sm:table-cell col-no-right-border">{check_row(i) ? (i[3] != '9' ? open_types[i[3]]?.TypeName : '日曜加算') : ''}</td>
               <td className="hidden sm:table-cell col-no-right-border">{check_row(i) ? i[4]  : ''}</td>
               <td className="hidden sm:table-cell col-no-right-border">{check_row(i) ? i[5]  : ''}</td>
               <td className="hidden sm:table-cell col-no-right-border">{check_row(i) ? i[6]  : ''}</td>
@@ -178,7 +453,7 @@ export default function Index() {
                 <span className={i[3] >= 0 ? (i[11] ? 'text-green-500' : 'text-red-500 font-bold') : ''}>{check_row(i) ? (i[3] >= 0 ? (i[11] ? 'OK' : 'NG') : '') : ''}</span>
               </td>
               <td>
-                <button type="button" className="btn-primary" onClick={() => context.setEditParams(context.search_school_id, i[0], true)}>
+                <button type="button" className="btn-primary" onClick={() => editPage(search_school_id, i[0])}>
                   入力
                 </button>
               </td>
@@ -240,7 +515,7 @@ export default function Index() {
                     </tr>
                   </thead>
                   <tbody>
-                    {Object.values(context.search_results)?.map((i:any) => (
+                    {Object.values(view_data.list)?.map((i:any) => (
                       <tr key={i[0]} className={"row-middle " + bg_color_weekday(i[0], i[2])}>
                         <td className="table-cell col-no-right-border py-1">{i[1]}</td>
                         <td className="table-cell col-no-right-border py-1">{weekday[i[2]]}</td>
@@ -248,8 +523,8 @@ export default function Index() {
                           <select className="py-2 sm:px-2 text-sm" name={i[0] + "|open_type"} defaultValue={i[3]}>
                             <option value="" key="none"></option>
                             {
-                              Object.keys(context.config.open_types).map((key:string) => (
-                                <option value={key} key={key}>{context.config.open_types[key].TypeName}</option>
+                              Object.keys(open_types).map((key:string) => (
+                                <option value={key} key={key}>{open_types[key].TypeName}</option>
                               ))
                             }
                             <option value={9} key={9}>{"日曜加算"}</option>
@@ -266,6 +541,69 @@ export default function Index() {
               <div className="modal-footer">
                 <button type="button" className="btn-danger w-28" onClick={() => setChildrenInputModalOpen(false)}>キャンセル</button>
                 <button type="submit" className="ms-3 btn-primary w-28">登録</button>
+              </div>
+            </Form>
+          </div>
+        </div>
+      </div>
+
+      {/** 資料ダウンロードダイアログ */}
+      <div id="edit-modal" tabIndex={-1}
+        className={(open_download ? "block" : "hidden") + " modal-back-ground"}
+        onClick={(e) => {
+          if((e.target as HTMLElement).id == 'edit-modal'){
+            setOpenDownload(false)
+          }
+        }}>
+        <div className="modal-dialog">
+          <div className="modal-content">
+            <Form onSubmit={(e) => downloadSubmit(e)}>
+              <div className="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  資料ダウンロード
+                </h3>
+                <button type="button" className="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white" onClick={() => setOpenDownload(false)}>
+                  <svg className="w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                    <path stroke="currentColor" strokeLinecap={"round"} strokeLinejoin={"round"} strokeWidth={2} d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                  </svg>
+                  <span className="sr-only">Close modal</span>
+                </button>
+              </div>
+              <div className="modal-body">
+                <div className="form-group ml-2">
+                  <label htmlFor="a" className="form-label">種別：</label>
+                  <span className="radio-inline">
+                    <input id="a" className="form-check-input" type="radio" name="download_type" value={'1'} checked={download_type=='1'} onChange={() => setDownloadType('1')}/>
+                    <label htmlFor="a">月次報告書</label>
+                  </span>
+                  <span className="radio-inline ml-2">
+                    <input id="b" className="form-check-input" type="radio" name="download_type" value={'2'} checked={download_type=='2'} onChange={() => setDownloadType('2')}/>
+                    <label htmlFor="b">勤務表</label>
+                  </span>
+                  <span className="radio-inline ml-2">
+                    <input id="c" className="form-check-input" type="radio" name="download_type" value={'3'} checked={download_type=='3'} onChange={() => setDownloadType('3')}/>
+                    <label htmlFor="c">加配時間</label>
+                  </span>
+                </div>
+                <div className={"form-group ml-2 flex " + (download_type != '3' ? '' : 'hidden')}>
+                  <label htmlFor="download_ym" className="form-label py-2">年月：</label>
+                  <select id="download_ym" name="download_ym" className="select w-1/3" value={download_ym} onChange={(e) => setDownloadYM(e.target.value)}>
+                    {ym_list.map((item:any) => (
+                      <option key={item.value} value={item.value}>{item.value.split('-').join('年') + '月' + (item.confirm ? ' 確定済み' : '')}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className={"form-group ml-2 flex " + (download_type == '3' ? '' : 'hidden')} >
+                  <label htmlFor="download_y" className="form-label py-2">年度：</label>
+                  <select id="download_y" name="download_y" className="select w-1/3" value={download_y} onChange={(e) => setDownloadY(parseInt(e.target.value))}>
+                    {download_y_list.map((year:any) => (
+                      <option key={year} value={year}>{year + '年度'}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="submit" className="ms-3 btn-primary w-28" onClick={() => setOpenDownload(false)}>ダウンロード</button>
               </div>
             </Form>
           </div>

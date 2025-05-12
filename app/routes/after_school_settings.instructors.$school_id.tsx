@@ -122,7 +122,7 @@ export default function Index() {
 
   return (
     <div className="border-t-2">
-      {Loading((navigation.state == 'loading' || navigation.state == 'submitting') ? navigation : {state: is_loading})}
+      {is_loading && Loading()}
       <div className="flex justify-between my-2">
         <div>
           <p className="text-2xl font-bold">指導員情報</p>

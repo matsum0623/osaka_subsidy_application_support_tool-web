@@ -6,8 +6,6 @@ import {
 export default function Edit() {
   const context = useOutletContext();
   return (
-    <div>
-      <Outlet context={context}/>
-    </div>
+    <Outlet context={context}/>
   )
 }

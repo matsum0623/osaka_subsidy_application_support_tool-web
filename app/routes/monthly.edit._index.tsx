@@ -2,129 +2,125 @@ import {
   Form,
   useNavigate,
   useOutletContext,
+  useSearchParams,
 } from "@remix-run/react"
-import React from "react";
+import React, { useEffect } from "react";
 import { useState } from "react";
-import { postData } from "~/api/fetchApi";
+import { getData, postData } from "~/api/fetchApi";
 import { ExcessShortage } from "~/components/ExcessShortage";
-import { createDates, weekday } from "~/components/util";
+import { createDates, Loading, viewMonth, weekday } from "~/components/util";
 import { checkInstructor } from "~/lib/common_check";
+import { getLs } from "~/lib/ls";
 
 export default function Index() {
   const context: {
     id_token: string,
-    search_school_id: string,
-    search_ym: string,
-    edit_date: string,
-    config: {
-      open_types: any,
-    }
-    setEditParams(school_id: string, date: string): void,
-    changeParams(ym: string, school_id: string): void,
-    instructors: { [key: string]: { start: string, end: string, hours: string, additional_check?: boolean } },
-    open_type: string,
-    open_time: any,
-    sum_hours: string,
-    children_sum: string,
-    children_disability: string,
-    children_medical_care: string,
-    instChk: boolean,
-    setInstructors(instructors:{ [key: string]: { start: string, end: string, hours: string, additional_check?: boolean } }): void
-    setOpenType(open_type: string): void,
-    setOpenTime(open_time: any): void,
-    setChildrenSum(children_sum: string): void,
-    setChildrenDisability(children_disability: string): void,
-    setChildrenMedicalCare(children_medical_care: string): void,
-    setSumHours(sum_hour: string): void,
-    setIsLoading(is_loading: string): void,
-    setInstChk(inst_chk: boolean): void,
   } = useOutletContext();
 
   const navigate = useNavigate()
+
+  const user_id = getLs('user_id') ?? ''
+  const user_data = JSON.parse(getLs('user_data') || '{}')
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [search_date, setSearchDate] = useState(searchParams.get('date') || (viewMonth() + '-01'))
+  const [search_school_id, setSearchSchoolId] = useState(searchParams.get('school_id') || user_data.user_data.after_schools[0].school_id)
+
+  const [instructors, setInstructors] = useState<{[key: string]: { start: string, end: string, hours: string, additional_check?: boolean}}>({})
+  const [sum_hours, setSumHours] = useState('')
+  const [open_type, setOpenType] = useState('0')
+  const [open_time, setOpenTime] = useState({ start: '', end: '' })
+  const [children_sum, setChildrenSum] = useState(0)
+  const [children_disability, setChildrenDisability] = useState(0)
+  const [children_medical_care, setChildrenMedicalCare] = useState(0)
+  const [instChk, setInstChk] = useState(false)
+  const [open_types, setOpenTypes] = useState<{ [key: string]: any }>({})
+
+  const [is_loading, setIsLoading] = useState(false)
 
   const [modal_open, setModalOpen] = useState(false)
   const [go_next, setGoNext] = useState(false)
 
   const [ct, setCt] = useState(0) // 再描画用のState
 
-  const [now_dt, prev_dt, next_dt] = createDates(context.edit_date)
+  const [now_dt, prev_dt, next_dt] = createDates(search_date)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    context.setIsLoading("submitting")
+    setIsLoading(true)
     e.preventDefault();
     const post_data = {
-      school_id: context.search_school_id,
+      school_id: search_school_id,
       date: now_dt.toISOString().slice(0, 10),
-      open_type: context.open_type,
-      open_time: context.open_time,
-      instructors: context.instructors,
+      open_type: open_type,
+      open_time: open_time,
+      instructors: instructors,
       children: {
-          sum: context.children_sum,
-          disability: context.children_disability,
-          medical_care: context.children_medical_care,
+          sum: children_sum,
+          disability: children_disability,
+          medical_care: children_medical_care,
       },
       summary: {
-          hours: context.sum_hours,
+          hours: sum_hours,
       },
     }
     await postData("/monthly/daily", post_data, context.id_token)
     if(go_next){
-      context.setEditParams(context.search_school_id, next_dt.toISOString().slice(0, 10));
+      changeParams(search_school_id, next_dt.toISOString().slice(0, 10))
     }
-    context.setIsLoading("idle")
+    setIsLoading(false)
   }
 
   const changeOpenType = (value:string) => {
-    const open = value != '9' ? context.config.open_types[value].OpenTime : context.open_time.start
-    const close = value != '9' ? context.config.open_types[value].CloseTime : context.open_time.end
-    context.setOpenType(value)
-    context.setOpenTime({
+    const open = value != '9' ? open_types[value].OpenTime : open_time.start
+    const close = value != '9' ? open_types[value].CloseTime : open_time.end
+    setOpenType(value)
+    setOpenTime({
       start: open,
       end: close
     })
-    context.setInstChk(checkInstructor(context.instructors, open, close).check)
+    setInstChk(checkInstructor(instructors, open, close).check)
   }
 
   const instructorCheck = () => {
-    const open = context.open_type != '9' ? context.config.open_types[context.open_type].OpenTime : context.open_time.start
-    const close = context.open_type != '9' ? context.config.open_types[context.open_type].CloseTime : context.open_time.end
-    const check_response = checkInstructor(context.instructors, open, close)
-    context.setInstChk(check_response.check)
+    const open = open_type != '9' ? open_types[open_type].OpenTime : open_time.start
+    const close = open_type != '9' ? open_types[open_type].CloseTime : open_time.end
+    const check_response = checkInstructor(instructors, open, close)
+    setInstChk(check_response.check)
   }
 
   const setHour = (target:any) => {
     const [id, k] = target.name.split('.').slice(-2)
-    const start_time = (k == 'start') ? target.value : context.instructors[id].start
-    const end_time = (k == 'end') ? target.value : context.instructors[id].end
+    const start_time = (k == 'start') ? target.value : instructors[id].start
+    const end_time = (k == 'end') ? target.value : instructors[id].end
     if (!start_time || !end_time){
-      context.instructors[id].start = start_time
-      context.instructors[id].end = end_time
-      context.instructors[id].hours = ''
+      instructors[id].start = start_time
+      instructors[id].end = end_time
+      instructors[id].hours = ''
     }else if (start_time >= end_time){
       // TODO: 不正な登録の場合は画面に表示する
       console.log("不正な時刻登録です", start_time, end_time)
-      context.instructors[id].hours = ''
+      instructors[id].hours = ''
     }else{
       const [start_hour, start_min] = start_time.split(':').map((i:any) => (parseInt(i)))
       const [end_hour, end_min] = end_time.split(':').map((i:any) => (parseInt(i)))
       const hour_min = start_min > end_min ? end_min - start_min + 60 : end_min - start_min
       const hour_hour = start_min > end_min ? end_hour - start_hour - 1 : end_hour - start_hour
-      context.instructors[id].hours = hour_hour + ':' + ( '00' + hour_min ).slice( -2 )
-      context.instructors[id].start = start_time
-      context.instructors[id].end = end_time
+      instructors[id].hours = hour_hour + ':' + ( '00' + hour_min ).slice( -2 )
+      instructors[id].start = start_time
+      instructors[id].end = end_time
     }
-    context.setInstructors(context.instructors)
+    setInstructors(instructors)
 
     let sum_hour = 0
     let sum_min = 0
-    Object.values(context.instructors).map((inst:any) => {
+    Object.values(instructors).map((inst:any) => {
       if (inst.hours){
         const [hour, min] = inst.hours.split(':')
         sum_hour += parseInt(hour)
         sum_min += parseInt(min)
       }
     })
-    Object.values(context.instructors).filter((inst) => inst.hours).reduce((result:any, inst:any) => {
+    Object.values(instructors).filter((inst) => inst.hours).reduce((result:any, inst:any) => {
       const [hour, min] = inst.hours.split(':').map((i:any) => (parseInt(i)))
       result.sum_hour += hour
       result.sum_min += min
@@ -135,49 +131,71 @@ export default function Index() {
     })
     sum_hour += Math.floor(sum_min / 60)
     sum_min = sum_min % 60
-    context.setSumHours(sum_hour + ':' + ( '00' + sum_min ).slice( -2 ))
+    setSumHours(sum_hour + ':' + ( '00' + sum_min ).slice( -2 ))
     setCt(ct + 1)
   }
 
   const changeAdditional = (id:string, checked:boolean) => {
-    context.instructors[id].additional_check = checked
-    const open = context.open_type != '9' ? context.config.open_types[context.open_type].OpenTime : context.open_time.start
-    const close = context.open_type != '9' ? context.config.open_types[context.open_type].CloseTime : context.open_time.end
-    const check_response = checkInstructor(context.instructors, open, close)
-    context.setInstChk(check_response.check)
-    context.setInstructors(context.instructors)
+    instructors[id].additional_check = checked
+    const open = open_type != '9' ? open_types[open_type].OpenTime : open_time.start
+    const close = open_type != '9' ? open_types[open_type].CloseTime : open_time.end
+    const check_response = checkInstructor(instructors, open, close)
+    setInstChk(check_response.check)
+    setInstructors(instructors)
     setCt(ct + 1)
   }
 
   const CancelClick = () => {
-    context.changeParams(context.search_ym, context.search_school_id)
-    navigate(`/monthly`)
+    navigate(`/monthly?ym=${search_date.slice(0, 7)}&school_id=${search_school_id}`)
+  }
+
+  useEffect(() => {
+    search_data(search_school_id, search_date)
+  }, [])
+
+  const search_data = async (school_id:string, date:string): Promise<any> => {
+    setIsLoading(true)
+    const res = await getData(`/monthly/daily?school_id=${school_id}&date=${date}`, context.id_token)
+    setInstructors(res.instructors)
+    setSumHours(res.summary.hours)
+    setOpenType(res.open_type || '0')
+    setChildrenSum(res.children.sum)
+    setChildrenDisability(res.children.disability)
+    setChildrenMedicalCare(res.children.medical_care)
+    setInstChk(checkInstructor(res.instructors, res.open_time.start, res.open_time.end).check)
+    setOpenTime({start: res.open_time.start, end: res.open_time.end})
+    setOpenTypes(res.config.open_types)
+    setIsLoading(false)
+  }
+
+  const changeParams = async (school_id:string, date:string) => {
+    setIsLoading(true)
+    setSearchDate(date)
+    setSearchSchoolId(school_id)
+    navigate(`/monthly/edit?school_id=${school_id}&date=${date}`)
+    await search_data(school_id, date)
+    setIsLoading(false)
   }
 
   return (
     <div>
+      {is_loading && Loading()}
       <div className="bg-white flex justify-between sticky top-0 sm:top-0 pt-2">
         <div className="text-base sm:text-2xl flex gap-3 justify-center sm:justify-start">
           <div className="flex">
-            <input type="date" value={context.edit_date} onChange={(e) => context.setEditParams(context.search_school_id, e.target.value)} className="input-default sm:text-xl sm:py-1" />
+            <input type="date" value={search_date} onChange={(e) => changeParams(search_school_id, e.target.value)} className="input-default sm:text-xl sm:py-1" />
             <span className="hidden sm:block py-2">({weekday[now_dt.getDay()]})</span>
           </div>
-          <span className={'py-2 ' + (context.instChk ? 'text-green-500' : 'text-red-500 font-bold')}>{context.instChk ? "OK" : "NG"}</span>
-            <button type="button" className="btn-primary min-w-10" onClick={() => context.setEditParams(context.search_school_id, prev_dt.toISOString().slice(0, 10))}>
+          <span className={'py-2 ' + (instChk ? 'text-green-500' : 'text-red-500 font-bold')}>{instChk ? "OK" : "NG"}</span>
+            <button type="button" className="btn-primary min-w-10" onClick={() => changeParams(search_school_id, prev_dt.toISOString().slice(0, 10))}>
               <span className="hidden sm:block">前日</span>
               <span className="sm:hidden">前</span>
             </button>
-            <button type="button" className="btn-primary min-w-10" onClick={() => context.setEditParams(context.search_school_id, next_dt.toISOString().slice(0, 10))}>
+            <button type="button" className="btn-primary min-w-10" onClick={() => changeParams(search_school_id, next_dt.toISOString().slice(0, 10))}>
               <span className="hidden sm:block">翌日</span>
               <span className="sm:hidden">翌</span>
             </button>
           </div>
-        <div className="text-base sm:text-2xl flex">
-          <button type="button" className="btn-primary min-w-10" onClick={() => setModalOpen(true)}>
-            <span className="hidden sm:block">チェック</span>
-            <span className="sm:hidden">CHK</span>
-          </button>
-        </div>
       </div>
 
       {/** 過不足確認ダイアログ */}
@@ -201,7 +219,7 @@ export default function Index() {
                 <span className="sr-only">Close modal</span>
               </button>
             </div>
-            {ExcessShortage(context.open_time.start, context.open_time.end, context.instructors, context.edit_date)}
+            {ExcessShortage(open_time.start, open_time.end, instructors, search_date)}
           </div>
         </div>
       </div>
@@ -212,10 +230,10 @@ export default function Index() {
             <div className="w-full border">
               <div className="hidden sm:block border-b font-bold p-1">開所パターン</div>
               <div>
-                <select className="py-2 sm:px-2 text-sm" name="open_type" value={context.open_type} onChange={(e) => changeOpenType(e.target.value)}>
+                <select className="py-2 sm:px-2 text-sm" name="open_type" value={open_type} onChange={(e) => changeOpenType(e.target.value)}>
                   {
-                    Object.keys(context.config.open_types).map((key:string) => (
-                      <option value={key} key={key}>{context.config.open_types[key].TypeName}</option>
+                    Object.keys(open_types).map((key:string) => (
+                      <option value={key} key={key}>{open_types[key].TypeName}</option>
                     ))
                   }
                   <option value={9} key={9}>{"日曜加算"}</option>
@@ -225,11 +243,11 @@ export default function Index() {
             <div className="flex sm:block w-full border justify-between">
               <div className="hidden sm:block w-1/4 sm:w-full border-b font-bold p-1">開所時間</div>
               <div className="w-full sm:px-2 py-2 flex justify-center gap-1 sm:gap-2">
-                <input className={context.open_type != '9' ? "icon-del" : ""} name={"times.open.start"} value={context.open_time.start} type="time" min={"06:00:00"} max={"22:00:00"} step={"900"}
-                  onChange={(e) => context.setOpenTime({start: e.target.value, end: context.open_time.end})} onBlur={() => instructorCheck()} disabled={context.open_type != '9'}/>
+                <input className={open_type != '9' ? "icon-del" : ""} name={"times.open.start"} value={open_time.start} type="time" min={"06:00:00"} max={"22:00:00"} step={"900"}
+                  onChange={(e) => setOpenTime({start: e.target.value, end: open_time.end})} onBlur={() => instructorCheck()} disabled={open_type != '9'}/>
                 <span>～</span>
-                <input className={context.open_type != '9' ? "icon-del" : ""} name={"times.open.end"} value={context.open_time.end} type="time" min={"06:00:00"} max={"22:00:00"} step={"900"}
-                  onChange={(e) => context.setOpenTime({start: context.open_time.start, end: e.target.value})} onBlur={() => instructorCheck()} disabled={context.open_type != '9'}/>
+                <input className={open_type != '9' ? "icon-del" : ""} name={"times.open.end"} value={open_time.end} type="time" min={"06:00:00"} max={"22:00:00"} step={"900"}
+                  onChange={(e) => setOpenTime({start: open_time.start, end: e.target.value})} onBlur={() => instructorCheck()} disabled={open_type != '9'}/>
               </div>
             </div>
           </div>
@@ -239,21 +257,21 @@ export default function Index() {
                 <span className="hidden sm:block">児童数</span>
                 <span className="block sm:hidden">児</span>
               </div>
-              <div className="w-3/4 sm:w-full px-2"><input className="text-right input-default" name="children" type="number" value={context.children_sum} onChange={(e) => context.setChildrenSum(e.target.value)}/></div>
+              <div className="w-3/4 sm:w-full px-2"><input className="text-right input-default" name="children" type="number" value={children_sum} onChange={(e) => setChildrenSum(parseInt(e.target.value))}/></div>
             </div>
             <div className="flex sm:block w-full border">
               <div className="w-1/4 sm:w-full border-b font-bold p-1">
                 <span className="hidden sm:block">障がい</span>
                 <span className="block sm:hidden">障</span>
               </div>
-              <div className="w-3/4 sm:w-full px-2"><input className="text-right input-default" name="disability" type="number" value={context.children_disability} onChange={(e) => context.setChildrenDisability(e.target.value)}/></div>
+              <div className="w-3/4 sm:w-full px-2"><input className="text-right input-default" name="disability" type="number" value={children_disability} onChange={(e) => setChildrenDisability(parseInt(e.target.value))}/></div>
             </div>
             <div className="flex sm:block w-full border">
               <div className="w-1/4 sm:w-full border-b font-bold p-1">
                 <span className="hidden sm:block">医ケア</span>
                 <span className="block sm:hidden">医</span>
               </div>
-              <div className="w-3/4 sm:w-full px-2"><input className="text-right input-default" name="medical_care" type="number" value={context.children_medical_care} onChange={(e) => context.setChildrenMedicalCare(e.target.value)}/></div>
+              <div className="w-3/4 sm:w-full px-2"><input className="text-right input-default" name="medical_care" type="number" value={children_medical_care} onChange={(e) => setChildrenMedicalCare(parseInt(e.target.value))}/></div>
             </div>
           </div>
         </div>
@@ -273,7 +291,7 @@ export default function Index() {
           </thead>
           <tbody>
             {
-              Object.values(context.instructors).filter((inst:any) => (!inst.retirement_date || context.edit_date <= inst.retirement_date)).sort((a:any, b:any) => (a.order - b.order)).map((inst: any) => {
+              Object.values(instructors).filter((inst:any) => (!inst.retirement_date || search_date <= inst.retirement_date)).sort((a:any, b:any) => (a.order - b.order)).map((inst: any) => {
                 return (
                 <tr key={inst.id}>
                   <td className="py-0.5 sm:py-2 text-base table-cell sm:hidden">{inst.name.slice(0,2)}</td>
@@ -292,17 +310,22 @@ export default function Index() {
               <td className="py-0.5 sm:py-2">合計</td>
               <td className="py-0.5 sm:py-2 table-cell sm:hidden" colSpan={2}></td>
               <td className="py-0.5 sm:py-2 hidden sm:table-cell" colSpan={5}></td>
-              <td className="py-0.5 sm:py-2"><input name={"hour_summary"} defaultValue={context.sum_hours} type="hidden" />{context.sum_hours}</td>
-              <td className="py-0.5 sm:py-2"></td>
+              <td className="py-0.5 sm:py-2"><input name={"hour_summary"} defaultValue={sum_hours} type="hidden" />{sum_hours}</td>
+              <td className="py-0.5 sm:py-2 w-1/12">
+                <button type="button" className="btn-check min-w-10" onClick={() => setModalOpen(true)}>
+                  <span className="hidden sm:block">チェック</span>
+                  <span className="sm:hidden">CHK</span>
+                </button>
+              </td>
             </tr>
           </tbody>
         </table>
         <p className="text-end mt-2">
-          <button type="submit" name='next' value={next_dt.toISOString().slice(0, 10)} className="btn-primary mr-3" onClick={() => setGoNext(true)}>登録して翌日</button>
+          <button type="submit" name='next' value={next_dt.toISOString().slice(0, 10)} className="btn-primary ml-6 mr-3" onClick={() => setGoNext(true)}>登録して翌日</button>
           <button type="submit" className="btn-primary mr-3" onClick={() => setGoNext(false)}>登録</button>
           <button onClick={() => CancelClick()} type="button" className="btn btn-danger sm:mr-10">戻る</button>
         </p>
-        <input type='hidden' name="school_id" value={context.search_school_id} />
+        <input type='hidden' name="school_id" value={search_school_id} />
         <input type='hidden' name="date" value={now_dt.toISOString().slice(0, 10)} />
       </Form>
 
