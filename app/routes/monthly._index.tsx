@@ -380,7 +380,7 @@ export default function Index() {
           </div>
         </div>
       </div>
-      <table className="w-full border-separate border-spacing-0">
+      <table className="w-full border-separate border-spacing-0 border-b">
         <thead className="hidden sm:table-header-group sticky top-monthly-header-sm bg-white z-0">
           <tr className="row-top">
             <th rowSpan={2} className="col-no-right-border">日付</th>

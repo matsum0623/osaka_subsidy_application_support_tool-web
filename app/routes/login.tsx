@@ -3,11 +3,12 @@ import {
   ClientActionFunctionArgs,
   redirect,
   useSearchParams,
-  useNavigate
+  useNavigate,
+  useNavigation
 } from "@remix-run/react";
 import { signIn, signOut, confirmSignIn, resetPassword, confirmResetPassword } from 'aws-amplify/auth'
 import { useState } from "react";
-import { closeButton } from "~/components/util";
+import { closeButton, Loading } from "~/components/util";
 import { setLs } from "~/lib/ls";
 
 export const clientLoader = async () => {
@@ -137,8 +138,11 @@ export default function Index() {
     }
   }
 
+  const navigation = useNavigation()
+
   return (
     <main className="w-100 m-auto">
+      {(navigation.state === "loading" || navigation.state === "submitting") && (Loading())}
       <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto mt-8 lg:py-0">
         <div className="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-lg xl:p-0 dark:bg-gray-800 dark:border-gray-700">
           <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
