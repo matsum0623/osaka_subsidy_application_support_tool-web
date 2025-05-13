@@ -8,6 +8,7 @@ import React, { useEffect } from "react";
 import { useState } from "react";
 import { getData, postData } from "~/api/fetchApi";
 import { ExcessShortage } from "~/components/ExcessShortage";
+import { RightHeader } from "~/components/header";
 import { createDates, Loading, viewMonth, weekday } from "~/components/util";
 import { checkInstructor } from "~/lib/common_check";
 import { getLs } from "~/lib/ls";
@@ -180,22 +181,29 @@ export default function Index() {
   return (
     <div>
       {is_loading && Loading()}
-      <div className="bg-white flex justify-between sticky top-0 sm:top-0 pt-2">
-        <div className="text-base sm:text-2xl flex gap-3 justify-center sm:justify-start">
-          <div className="flex">
-            <input type="date" value={search_date} onChange={(e) => changeParams(search_school_id, e.target.value)} className="input-default sm:text-xl sm:py-1" />
-            <span className="hidden sm:block py-2">({weekday[now_dt.getDay()]})</span>
+      <div className="bg-white flex justify-between sticky top-0 sm:top-0">
+        <div className="text-base sm:text-2xl flex gap-3 justify-center sm:justify-start h-14">
+          <div className="flex py-2">
+            <input type="date" value={search_date} onChange={(e) => changeParams(search_school_id, e.target.value)} className="input-default sm:text-xl p-1.5" />
+            <span className="hidden sm:block py-1">({weekday[now_dt.getDay()]})</span>
           </div>
-          <span className={'py-2 ' + (instChk ? 'text-green-500' : 'text-red-500 font-bold')}>{instChk ? "OK" : "NG"}</span>
-            <button type="button" className="btn-primary min-w-10" onClick={() => changeParams(search_school_id, prev_dt.toISOString().slice(0, 10))}>
-              <span className="hidden sm:block">前日</span>
+          <div className="py-3">
+            <span className={(instChk ? 'text-green-500' : 'text-red-500 font-bold')}>{instChk ? "OK" : "NG"}</span>
+          </div>
+          <div className="py-2">
+            <button type="button" className="btn-primary min-w-10 h-full" onClick={() => changeParams(search_school_id, prev_dt.toISOString().slice(0, 10))}>
+              <span className="hidden sm:block px-3">前日</span>
               <span className="sm:hidden">前</span>
             </button>
-            <button type="button" className="btn-primary min-w-10" onClick={() => changeParams(search_school_id, next_dt.toISOString().slice(0, 10))}>
-              <span className="hidden sm:block">翌日</span>
+          </div>
+          <div className="py-2">
+            <button type="button" className="btn-primary min-w-10 h-full" onClick={() => changeParams(search_school_id, next_dt.toISOString().slice(0, 10))}>
+              <span className="hidden sm:block px-3">翌日</span>
               <span className="sm:hidden">翌</span>
             </button>
           </div>
+        </div>
+        {RightHeader(user_id, user_data)}
       </div>
 
       {/** 過不足確認ダイアログ */}
@@ -225,7 +233,7 @@ export default function Index() {
       </div>
 
       <Form method="post" onSubmit={(e) => handleSubmit(e)}>
-        <div className="sm:flex mt-3 w-full text-center">
+        <div className="sm:flex w-full text-center">
           <div className="flex w-full sm:w-2/5 justify-between">
             <div className="w-full border">
               <div className="hidden sm:block border-b font-bold p-1">開所パターン</div>

@@ -1,8 +1,9 @@
-import { Form, Link, useNavigate, useNavigation, useOutletContext, useSearchParams } from "@remix-run/react";
+import { Form, useNavigate, useOutletContext, useSearchParams } from "@remix-run/react";
 import { confirmResetPassword, resetPassword } from "aws-amplify/auth";
 import { useEffect, useRef, useState } from "react";
 import { getData, putData } from "~/api/fetchApi";
-import { closeButton, downloadYearList, Loading, viewMonth, viewMonthList, weekday } from "~/components/util"
+import { RightHeader } from "~/components/header";
+import { downloadYearList, Loading, viewMonth, viewMonthList, weekday } from "~/components/util"
 import { check_int_plus } from "~/lib/common_check";
 import { getLs } from "~/lib/ls";
 
@@ -106,11 +107,11 @@ export default function Index() {
 
   const bg_color_weekday = (date:string, weekday:number) => {
     if (weekday == 6){
-      return "bg-cyan-100"
+      return "bg-cyan-100 hover:bg-cyan-200 "
     }else if (weekday == 0 || holidays.includes(date)){
-      return "bg-red-100"
+      return "bg-red-100 hover:bg-red-200 "
     }else{
-      return ""
+      return "hover:bg-slate-200 "
     }
   }
 
@@ -158,7 +159,7 @@ export default function Index() {
     setIsLoading(false)
   }
 
-  const downloadSummary = async (output_type:string = 'monthly_report') => {
+  const downloadSummary = async () => {
     setIsLoading(true)
     const report_data = await getData(`/monthly/download/summary?year=${download_y}&school_id=${search_school_id}`, context.id_token)
     const link = anchorRef.current
@@ -229,7 +230,6 @@ export default function Index() {
           confirmationCode: reset_code,
           newPassword: new_password,
         })
-        console.log(reset_result)
       alert('パスワードリセットが完了しました。')
       setIsResetPasswordConfirm(false)
     } catch (e) {
@@ -250,14 +250,14 @@ export default function Index() {
       <div className="flex justify-between bg-white sticky top-0 z-10">
         <div className="flex">
           <div className="py-2 sm:p-2">
-            <select name="school_id" className="select" value={search_school_id} onChange={(e) => changeParams(search_ym ,e.target.value)}>
+            <select name="school_id" className="select sm:text-xl p-1.5" value={search_school_id} onChange={(e) => changeParams(search_ym ,e.target.value)}>
               {user_data.user_data.after_schools.map((item:any) => (
                 <option key={item.school_id} value={item.school_id}>{item.school_id + ':' + item.school_name}</option>
               ))}
             </select>
           </div>
           <div className="py-2 sm:p-2">
-            <select name="ym" className="select" value={search_ym} onChange={(e) => changeParams(e.target.value, search_school_id)}>
+            <select name="ym" className="select sm:text-xl p-1.5" value={search_ym} onChange={(e) => changeParams(e.target.value, search_school_id)}>
               {ym_list.map((item:any) => (
                 <option key={item.value} value={item.value}>{item.value.split('-').join('年') + '月' + (item.confirm ? ' 確定済み' : '')}</option>
               ))}
@@ -268,200 +268,87 @@ export default function Index() {
               className="btn-download">
                 資料ダウンロード
             </button>
+            <a ref={anchorRef} className='hidden' download={'テストファイル'}></a>
           </div>
         </div>
-        <div className="flex">
-          <a ref={anchorRef} className='hidden' download={'テストファイル'}></a>
-          <div className="ms-auto p-2 hidden sm:flex sm:gap-4">
-            <div>
-              {
-                user_data.user_data.admin &&
-                <Link to="/admin" className="hidden sm:flex text-sm sm:text-xl font-semibold leading-6 text-gray-900 underline sm:py-2">管理画面</Link>
-              }
-              {
-                !user_data.user_data.admin &&
-                <Link to="/after_school_settings" className="hidden sm:flex text-sm sm:text-xl font-semibold leading-6 text-gray-900 underline sm:py-2">学童設定</Link>
-              }
-            </div>
-            <div className="flex sm:flex-1 sm:justify-end">
-              <button type="button" className="text-sm sm:text-xl font-semibold leading-6 text-gray-900" onClick={() => setOpenAccount(!open_account)}>アカウント</button>
-              <div className="absolute bg-white border-2 border-gray-300 top-11 px-3 py-2 rounded-lg" hidden={!open_account}>
-                <table className="table-auto text-sm sm:text-xl leading-6 text-gray-900 account-table">
-                  <tbody>
-                    <tr>
-                      <td className="text-right">ユーザID：</td>
-                      <td>{user_id}</td>
-                    </tr>
-                    <tr>
-                      <td className="text-right">名前：</td>
-                      <td>{user_data.user_data.user_name}</td>
-                    </tr>
-                    <tr>
-                      <td className="text-right">学童数：</td>
-                      <td>{user_data.user_data.after_schools.length}施設</td>
-                    </tr>
-                    <tr>
-                      <td className="text-right">権限：</td>
-                      <td>{user_data.user_data.admin ? '管理者' : '一般'}</td>
-                    </tr>
-                  </tbody>
-                </table>
-                <div className="py-1 text-right mt-2"><button type="button" className="text-sm sm:text-xl font-semibold leading-6 text-gray-900" onClick={() => setIsResetPassword(true)}>パスワード変更</button></div>
-                <div className="py-1 text-right"><Link to="/logout" className="text-sm sm:text-xl text-red-500 font-semibold leading-6 sm:py-2" >ログアウト</Link></div>
-              </div>
-
-              {/** パスワードリセットダイアログ */}
-              <div id="reset-modal" tabIndex={-1}
-                className={(is_reset_password ? "block" : "hidden") + " modal-back-ground"}
-                onClick={(e) => {
-                  if((e.target as HTMLElement).id == 'reset-modal'){
-                    setIsResetPassword(false)
-                  }
-                }}>
-                <div className="modal-dialog">
-                  <div className="modal-content">
-                    <Form onSubmit={(e) => handleResetPassword(e)}>
-                      <div className="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
-                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                          パスワード再設定
-                        </h3>
-                        {closeButton(setIsResetPassword)}
-                      </div>
-                      <div className="modal-body">
-                        <div>
-                          <p className="mb-2 text-xl font-medium text-gray-900 dark:text-white">パスワードをリセットしますか？</p>
-                        </div>
-                      </div>
-                      <div className="modal-footer">
-                        <button type="button" className="btn-danger w-28" onClick={() => setIsResetPassword(false)}>キャンセル</button>
-                        <button type="submit" className="ms-3 btn-primary w-28">実行</button>
-                      </div>
-                    </Form>
-                  </div>
-                </div>
-              </div>
-
-              {/** パスワードリセット認証コード入力ダイアログ */}
-              <div id="reset-modal" tabIndex={-1}
-                className={(is_reset_password_confirm ? "block" : "hidden") + " modal-back-ground"}
-                onClick={(e) => {
-                  if((e.target as HTMLElement).id == 'reset-modal'){
-                    setIsResetPasswordConfirm(false)
-                  }
-                }}>
-                <div className="modal-dialog">
-                  <div className="modal-content">
-                    <Form onSubmit={(e) => handleResetPasswordConfirm(e)}>
-                      <div className="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
-                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                          検証コードを入力
-                        </h3>
-                        {closeButton(setIsResetPasswordConfirm)}
-                      </div>
-                      <div className="modal-body">
-                        <div>
-                          <label htmlFor="verification_code" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">検証コード</label>
-                          <input type="text" name="verification_code" id="verification_code" placeholder="検証コード" className="login-input" required/>
-                        </div>
-                        <div>
-                          <label htmlFor="reset_new_password" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">新しいパスワード</label>
-                          <input type="password" name="reset_new_password" id="reset_new_password" placeholder="********" className="login-input" required/>
-                        </div>
-                      </div>
-                      <div className="modal-footer">
-                        <button type="button" className="btn-danger w-28" onClick={() => setIsResetPasswordConfirm(false)}>キャンセル</button>
-                        <button type="submit" className="ms-3 btn-primary w-28">登録</button>
-                      </div>
-                    </Form>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        {RightHeader(user_id, user_data)}
       </div>
-      <table className="w-full border-separate border-spacing-0 border-b">
-        <thead className="hidden sm:table-header-group sticky top-monthly-header-sm bg-white z-0">
-          <tr className="row-top">
-            <th rowSpan={2} className="col-no-right-border">日付</th>
-            <th rowSpan={2} className="col-no-right-border">曜日</th>
-            <th rowSpan={2} className="col-no-right-border">開所<br/>種別</th>
-            <th colSpan={3} className="col-no-right-border">
-              児童数
-              <button type="button" className="btn-primary px-3 py-2 ml-4" onClick={() => setChildrenInputModalOpen(true)}>
-                一括入力
-              </button>
-            </th>
-            <th colSpan={2} className="col-no-right-border">開所時職員数</th>
-            <th colSpan={2} className="col-no-right-border">閉所時職員数</th>
-            <th rowSpan={2} className="col-no-right-border">加配</th>
-            <th rowSpan={2} className="col-no-right-border">開所<br/>閉所</th>
-            <th rowSpan={2} className="col-no-right-border">配置</th>
-            <th rowSpan={2}></th>
-          </tr>
-          <tr className="row-middle">
-            <th className="col-no-right-border">合計</th>
-            <th className="col-no-right-border">内、障がい児</th>
-            <th className="col-no-right-border">内、医ケア児</th>
-            <th className="col-no-right-border">支援員数</th>
-            <th className="col-no-right-border">支援員以外</th>
-            <th className="col-no-right-border">支援員数</th>
-            <th className="col-no-right-border">支援員以外</th>
-          </tr>
-          <tr key={'summary'} className="">
-            <td colSpan={3} className="col-no-right-border">合計</td>
-            <td className="col-no-right-border">{child_summary['children']}</td>
-            <td className="col-no-right-border">{child_summary['disability']}</td>
-            <td className="col-no-right-border">{child_summary['medical_care']}</td>
-            <td className="col-no-right-border">{child_summary['open_qualification']}</td>
-            <td className="col-no-right-border">{child_summary['open_non_qualification']}</td>
-            <td className="col-no-right-border">{child_summary['close_qualification']}</td>
-            <td className="col-no-right-border">{child_summary['close_non_qualification']}</td>
-            <td colSpan={4}></td>
-          </tr>
-        </thead>
-        <thead className="table-header-group sm:hidden sticky top-monthly-header bg-white">
-          <tr>
-            <th className="col-no-right-border">日付</th>
-            <th className="col-no-right-border">開所<br/>閉所</th>
-            <th className="col-no-right-border">配置</th>
-            <th></th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {Object.values(view_data.list)?.map((i:any) => (
-            <tr key={i[0]} className={"row-middle " + bg_color_weekday(i[0], i[2])}>
-              <td className="hidden sm:table-cell col-no-right-border">{i[1]}</td>
-              <td className="hidden sm:table-cell col-no-right-border">{weekday[i[2]]}</td>
-              <td className="table-cell sm:hidden col-no-right-border">{i[1]}（{weekday[i[2]]}）</td>
-              <td className="hidden sm:table-cell col-no-right-border">{check_row(i) ? (i[3] != '9' ? open_types[i[3]]?.TypeName : '日曜加算') : ''}</td>
-              <td className="hidden sm:table-cell col-no-right-border">{check_row(i) ? i[4]  : ''}</td>
-              <td className="hidden sm:table-cell col-no-right-border">{check_row(i) ? i[5]  : ''}</td>
-              <td className="hidden sm:table-cell col-no-right-border">{check_row(i) ? i[6]  : ''}</td>
-              <td className="hidden sm:table-cell col-no-right-border">{check_row(i) ? i[7]  : ''}</td>
-              <td className="hidden sm:table-cell col-no-right-border">{check_row(i) ? i[8]  : ''}</td>
-              <td className="hidden sm:table-cell col-no-right-border">{check_row(i) ? i[9]  : ''}</td>
-              <td className="hidden sm:table-cell col-no-right-border">{check_row(i) ? i[10] : ''}</td>
-              <td className="hidden sm:table-cell col-no-right-border">{i[12] ? i[13] : ''}</td>
-              <td className="col-no-right-border">
-                <span className={(i[7] + i[8] >= 2 && i[9] + i[10] >= 2) ? 'text-green-500' : 'text-red-500 font-bold'}>
-                  {check_row(i) ? (i[3] >= 0 ? ((i[7] + i[8] >= 2 && i[9] + i[10] >= 2)  ? 'OK' : 'NG') : '') : ''}
-                </span>
-              </td>
-              <td className="col-no-right-border">
-                <span className={i[3] >= 0 ? (i[11] ? 'text-green-500' : 'text-red-500 font-bold') : ''}>{check_row(i) ? (i[3] >= 0 ? (i[11] ? 'OK' : 'NG') : '') : ''}</span>
-              </td>
-              <td>
-                <button type="button" className="btn-primary" onClick={() => editPage(search_school_id, i[0])}>
-                  入力
+      <div>
+        <table className="w-full border-separate border-spacing-0 border-b">
+          <thead className="hidden sm:table-header-group sticky top-monthly-header-sm bg-white z-0">
+            <tr className="row-top">
+              <th rowSpan={2} className="col-no-right-border">日付</th>
+              <th rowSpan={2} className="col-no-right-border">曜日</th>
+              <th rowSpan={2} className="col-no-right-border">開所<br/>種別</th>
+              <th colSpan={3} className="col-no-right-border">
+                児童数
+                <button type="button" className="btn-primary px-3 py-2 ml-4" onClick={() => setChildrenInputModalOpen(true)}>
+                  一括入力
                 </button>
-              </td>
+              </th>
+              <th colSpan={2} className="col-no-right-border">開所時職員数</th>
+              <th colSpan={2} className="col-no-right-border">閉所時職員数</th>
+              <th rowSpan={2} className="col-no-right-border">加配<br/>時間</th>
+              <th rowSpan={2} className="col-no-right-border">開所<br/>閉所</th>
+              <th rowSpan={2}>配置</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+            <tr className="row-middle">
+              <th className="col-no-right-border">合　計</th>
+              <th className="col-no-right-border">障がい</th>
+              <th className="col-no-right-border">医ケア</th>
+              <th className="col-no-right-border">支援員</th>
+              <th className="col-no-right-border">支以外</th>
+              <th className="col-no-right-border">支援員</th>
+              <th className="col-no-right-border">支以外</th>
+            </tr>
+            <tr key={'summary'} className="">
+              <td colSpan={3} className="col-no-right-border">合計</td>
+              <td className="col-no-right-border">{child_summary['children']}</td>
+              <td className="col-no-right-border">{child_summary['disability']}</td>
+              <td className="col-no-right-border">{child_summary['medical_care']}</td>
+              <td className="col-no-right-border">{child_summary['open_qualification']}</td>
+              <td className="col-no-right-border">{child_summary['open_non_qualification']}</td>
+              <td className="col-no-right-border">{child_summary['close_qualification']}</td>
+              <td className="col-no-right-border">{child_summary['close_non_qualification']}</td>
+              <td colSpan={3}></td>
+            </tr>
+          </thead>
+          <thead className="table-header-group sm:hidden sticky top-monthly-header bg-white">
+            <tr>
+              <th className="col-no-right-border">日付</th>
+              <th className="col-no-right-border">開所<br/>閉所</th>
+              <th>配置</th>
+            </tr>
+          </thead>
 
+          <tbody>
+            {Object.values(view_data.list)?.map((i:any) => (
+              <tr key={i[0]} className={"row-middle " + bg_color_weekday(i[0], i[2])} onClick={() => editPage(search_school_id, i[0])}>
+                <td className="hidden sm:table-cell col-no-right-border">{i[1]}</td>
+                <td className="hidden sm:table-cell col-no-right-border">{weekday[i[2]]}</td>
+                <td className="table-cell sm:hidden col-no-right-border">{i[1]}（{weekday[i[2]]}）</td>
+                <td className="hidden sm:table-cell col-no-right-border">{check_row(i) ? (i[3] != '9' ? open_types[i[3]]?.TypeName : '日曜加算') : ''}</td>
+                <td className="hidden sm:table-cell col-no-right-border">{check_row(i) ? i[4]  : ''}</td>
+                <td className="hidden sm:table-cell col-no-right-border">{check_row(i) ? i[5]  : ''}</td>
+                <td className="hidden sm:table-cell col-no-right-border">{check_row(i) ? i[6]  : ''}</td>
+                <td className="hidden sm:table-cell col-no-right-border">{check_row(i) ? i[7]  : ''}</td>
+                <td className="hidden sm:table-cell col-no-right-border">{check_row(i) ? i[8]  : ''}</td>
+                <td className="hidden sm:table-cell col-no-right-border">{check_row(i) ? i[9]  : ''}</td>
+                <td className="hidden sm:table-cell col-no-right-border">{check_row(i) ? i[10] : ''}</td>
+                <td className="hidden sm:table-cell col-no-right-border">{i[12] ? i[13] : ''}</td>
+                <td className="col-no-right-border">
+                  <span className={(i[7] + i[8] >= 2 && i[9] + i[10] >= 2) ? 'text-green-500' : 'text-red-500 font-bold'}>
+                    {check_row(i) ? (i[3] >= 0 ? ((i[7] + i[8] >= 2 && i[9] + i[10] >= 2)  ? 'OK' : 'NG') : '') : ''}
+                  </span>
+                </td>
+                <td>
+                  <span className={i[3] >= 0 ? (i[11] ? 'text-green-500' : 'text-red-500 font-bold') : ''}>{check_row(i) ? (i[3] >= 0 ? (i[11] ? 'OK' : 'NG') : '') : ''}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       {/** 児童数一括登録ダイアログ */}
       <div id="all-date-input-modal" tabIndex={-1}
         className={(children_input_modal_open ? "block" : "hidden") + " modal-back-ground"}

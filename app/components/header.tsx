@@ -34,16 +34,13 @@ export function Header(user_data:any) {
   );
 }
 
-export function AccountHeader() {
-  const [open_account, setOpenAccount] = useState(false)
-  const [is_reset_password, setIsResetPassword] = useState(false)
-  const [is_reset_password_confirm, setIsResetPasswordConfirm] = useState(false)
-  const [reset_confirm_username, setResetConfirmUsername] = useState('')
+export function RightHeader(user_id:string, user_data:any) {
+  const [open_account, setOpenAccount] = useState(false);
+  const [is_reset_password, setIsResetPassword] = useState(false);
+  const [is_reset_password_confirm, setIsResetPasswordConfirm] = useState(false);
+  const [reset_confirm_username, setResetConfirmUsername] = useState(user_id);
 
-  const user_id = getLs('user_id') ?? ''
-  const account = JSON.parse(getLs('user_data') ?? '{}')
-
-  const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
+    const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     try {
       const reset_result = await resetPassword({ username: user_id })
@@ -78,7 +75,6 @@ export function AccountHeader() {
           confirmationCode: reset_code,
           newPassword: new_password,
         })
-        console.log(reset_result)
       alert('パスワードリセットが完了しました。')
       setIsResetPasswordConfirm(false)
     } catch (e) {
@@ -88,100 +84,113 @@ export function AccountHeader() {
   }
 
   return (
-    <div className="flex sm:flex-1 sm:justify-end">
-      <button type="button" className="text-sm sm:text-xl font-semibold leading-6 text-gray-900" onClick={() => setOpenAccount(!open_account)}>アカウント</button>
-      <div className="absolute bg-white border-2 border-gray-300 top-11 px-3 py-2" hidden={!open_account}>
-        <table className="table-auto text-sm sm:text-xl leading-6 text-gray-900 account-table">
-          <tbody>
-            <tr>
-              <td className="text-right">ユーザID：</td>
-              <td>{user_id}</td>
-            </tr>
-            <tr>
-              <td className="text-right">名前：</td>
-              <td>{account.user_data.user_name}</td>
-            </tr>
-            <tr>
-              <td className="text-right">学童数：</td>
-              <td>{account.user_data.after_schools.length}施設</td>
-            </tr>
-            <tr>
-              <td className="text-right">権限：</td>
-              <td>{account.user_data.admin ? '管理者' : '一般'}</td>
-            </tr>
-          </tbody>
-        </table>
-        <div className="py-1 text-right mt-2"><button type="button" className="text-sm sm:text-xl font-semibold leading-6 text-gray-900" onClick={() => setIsResetPassword(true)}>パスワード変更</button></div>
-        <div className="py-1 text-right"><Link to="/logout" className="text-sm sm:text-xl text-red-500 font-semibold leading-6 sm:py-2" >ログアウト</Link></div>
-      </div>
-
-      {/** パスワードリセットダイアログ */}
-      <div id="reset-modal" tabIndex={-1}
-        className={(is_reset_password ? "block" : "hidden") + " modal-back-ground"}
-        onClick={(e) => {
-          if((e.target as HTMLElement).id == 'reset-modal'){
-            setIsResetPassword(false)
-          }
-        }}>
-        <div className="modal-dialog">
-          <div className="modal-content">
-            <Form onSubmit={(e) => handleResetPassword(e)}>
-              <div className="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  パスワード再設定
-                </h3>
-                {closeButton(setIsResetPassword)}
+        <div className="flex">
+          <div className="ms-auto p-2 hidden sm:flex sm:gap-4">
+            <div>
+              {
+                user_data.user_data.admin &&
+                <Link to="/admin" className="hidden sm:flex text-sm sm:text-xl font-semibold leading-6 text-gray-900 underline sm:py-2">管理画面</Link>
+              }
+              {
+                !user_data.user_data.admin &&
+                <Link to="/after_school_settings" className="hidden sm:flex text-sm sm:text-xl font-semibold leading-6 text-gray-900 underline sm:py-2">学童設定</Link>
+              }
+            </div>
+            <div className="flex sm:flex-1 sm:justify-end">
+              <button type="button" className="text-sm sm:text-xl font-semibold leading-6 text-gray-900" onClick={() => setOpenAccount(!open_account)}>アカウント</button>
+              <div className="absolute bg-white border-2 border-gray-300 top-11 px-3 py-2 rounded-lg" hidden={!open_account}>
+                <table className="table-auto text-sm sm:text-xl leading-6 text-gray-900 account-table">
+                  <tbody>
+                    <tr>
+                      <td className="text-right">ユーザID：</td>
+                      <td>{user_id}</td>
+                    </tr>
+                    <tr>
+                      <td className="text-right">名前：</td>
+                      <td>{user_data.user_data.user_name}</td>
+                    </tr>
+                    <tr>
+                      <td className="text-right">学童数：</td>
+                      <td>{user_data.user_data.after_schools.length}施設</td>
+                    </tr>
+                    <tr>
+                      <td className="text-right">権限：</td>
+                      <td>{user_data.user_data.admin ? '管理者' : '一般'}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div className="py-1 text-right mt-2"><button type="button" className="text-sm sm:text-xl font-semibold leading-6 text-gray-900" onClick={() => setIsResetPassword(true)}>パスワード変更</button></div>
+                <div className="py-1 text-right"><Link to="/logout" className="text-sm sm:text-xl text-red-500 font-semibold leading-6 sm:py-2" >ログアウト</Link></div>
               </div>
-              <div className="modal-body">
-                <div>
-                  <p className="mb-2 text-xl font-medium text-gray-900 dark:text-white">パスワードをリセットしますか？</p>
+
+              {/** パスワードリセットダイアログ */}
+              <div id="reset-modal" tabIndex={-1}
+                className={(is_reset_password ? "block" : "hidden") + " modal-back-ground"}
+                onClick={(e) => {
+                  if((e.target as HTMLElement).id == 'reset-modal'){
+                    setIsResetPassword(false)
+                  }
+                }}>
+                <div className="modal-dialog">
+                  <div className="modal-content">
+                    <Form onSubmit={(e) => handleResetPassword(e)}>
+                      <div className="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
+                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                          パスワード再設定
+                        </h3>
+                        {closeButton(setIsResetPassword)}
+                      </div>
+                      <div className="modal-body">
+                        <div>
+                          <p className="mb-2 text-xl font-medium text-gray-900 dark:text-white">パスワードをリセットしますか？</p>
+                        </div>
+                      </div>
+                      <div className="modal-footer">
+                        <button type="button" className="btn-danger w-28" onClick={() => setIsResetPassword(false)}>キャンセル</button>
+                        <button type="submit" className="ms-3 btn-primary w-28">実行</button>
+                      </div>
+                    </Form>
+                  </div>
                 </div>
               </div>
-              <div className="modal-footer">
-                <button type="button" className="btn-danger w-28" onClick={() => setIsResetPassword(false)}>キャンセル</button>
-                <button type="submit" className="ms-3 btn-primary w-28">実行</button>
+
+              {/** パスワードリセット認証コード入力ダイアログ */}
+              <div id="reset-modal" tabIndex={-1}
+                className={(is_reset_password_confirm ? "block" : "hidden") + " modal-back-ground"}
+                onClick={(e) => {
+                  if((e.target as HTMLElement).id == 'reset-modal'){
+                    setIsResetPasswordConfirm(false)
+                  }
+                }}>
+                <div className="modal-dialog">
+                  <div className="modal-content">
+                    <Form onSubmit={(e) => handleResetPasswordConfirm(e)}>
+                      <div className="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
+                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                          検証コードを入力
+                        </h3>
+                        {closeButton(setIsResetPasswordConfirm)}
+                      </div>
+                      <div className="modal-body">
+                        <div>
+                          <label htmlFor="verification_code" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">検証コード</label>
+                          <input type="text" name="verification_code" id="verification_code" placeholder="検証コード" className="login-input" required/>
+                        </div>
+                        <div>
+                          <label htmlFor="reset_new_password" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">新しいパスワード</label>
+                          <input type="password" name="reset_new_password" id="reset_new_password" placeholder="********" className="login-input" required/>
+                        </div>
+                      </div>
+                      <div className="modal-footer">
+                        <button type="button" className="btn-danger w-28" onClick={() => setIsResetPasswordConfirm(false)}>キャンセル</button>
+                        <button type="submit" className="ms-3 btn-primary w-28">登録</button>
+                      </div>
+                    </Form>
+                  </div>
+                </div>
               </div>
-            </Form>
+            </div>
           </div>
         </div>
-      </div>
-
-      {/** パスワードリセット認証コード入力ダイアログ */}
-      <div id="reset-modal" tabIndex={-1}
-        className={(is_reset_password_confirm ? "block" : "hidden") + " modal-back-ground"}
-        onClick={(e) => {
-          if((e.target as HTMLElement).id == 'reset-modal'){
-            setIsResetPasswordConfirm(false)
-          }
-        }}>
-        <div className="modal-dialog">
-          <div className="modal-content">
-            <Form onSubmit={(e) => handleResetPasswordConfirm(e)}>
-              <div className="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  検証コードを入力
-                </h3>
-                {closeButton(setIsResetPasswordConfirm)}
-              </div>
-              <div className="modal-body">
-                <div>
-                  <label htmlFor="verification_code" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">検証コード</label>
-                  <input type="text" name="verification_code" id="verification_code" placeholder="検証コード" className="login-input" required/>
-                </div>
-                <div>
-                  <label htmlFor="reset_new_password" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">新しいパスワード</label>
-                  <input type="password" name="reset_new_password" id="reset_new_password" placeholder="********" className="login-input" required/>
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn-danger w-28" onClick={() => setIsResetPasswordConfirm(false)}>キャンセル</button>
-                <button type="submit" className="ms-3 btn-primary w-28">登録</button>
-              </div>
-            </Form>
-          </div>
-        </div>
-      </div>
-
-    </div>
   )
 }
