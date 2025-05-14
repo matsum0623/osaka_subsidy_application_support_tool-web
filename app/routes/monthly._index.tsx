@@ -42,11 +42,6 @@ export default function Index() {
   const [download_y, setDownloadY] = useState<number>(download_y_list[0])
   const [download_ym, setDownloadYM] = useState(search_ym)
 
-  const [open_account, setOpenAccount] = useState(false)
-  const [is_reset_password, setIsResetPassword] = useState(false)
-  const [is_reset_password_confirm, setIsResetPasswordConfirm] = useState(false)
-  const [reset_confirm_username, setResetConfirmUsername] = useState('')
-
   const [is_loading, setIsLoading] = useState(false)
 
   const navigate = useNavigate();
@@ -193,49 +188,6 @@ export default function Index() {
     navigate(`/monthly?ym=${ym}&school_id=${school_id}`)
     await search_data(ym, school_id)
     setIsLoading(false)
-  }
-
-  const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    try {
-      const reset_result = await resetPassword({ username: user_id })
-      switch (reset_result.nextStep.resetPasswordStep) {
-        case "CONFIRM_RESET_PASSWORD_WITH_CODE":
-          alert(`パスワードリセットのためのコードを${reset_result.nextStep.codeDeliveryDetails.deliveryMedium}に送信しました。\nno-reply@verificationemail.comからのメールを確認してください。`)
-          setResetConfirmUsername(user_id)
-          setIsResetPassword(false)
-          setIsResetPasswordConfirm(true)
-          break
-        case "DONE":
-          alert('パスワードリセットが完了しました。')
-          break
-        default:
-          alert('予期せぬエラーが発生しました。')
-          break
-      }
-    } catch (e) {
-      console.error(e)
-      alert('パスワードリセットに失敗しました。')
-    }
-  }
-
-  const handleResetPasswordConfirm = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const formData = new FormData(e.currentTarget)
-    const reset_code:string = formData.get("verification_code")?.toString() || ''
-    const new_password:string = formData.get("reset_new_password")?.toString() || ''
-    try {
-      const reset_result = await confirmResetPassword(
-        { username: reset_confirm_username,
-          confirmationCode: reset_code,
-          newPassword: new_password,
-        })
-      alert('パスワードリセットが完了しました。')
-      setIsResetPasswordConfirm(false)
-    } catch (e) {
-      console.error(e)
-      alert('パスワードリセットに失敗しました。')
-    }
   }
 
   const editPage = (school_id:string, date:string) => {
