@@ -4,9 +4,8 @@ import {
   ClientLoaderFunctionArgs,
   Form,
   useNavigate,
-  useNavigation,
 } from "@remix-run/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getIdToken } from "~/api/auth";
 import { getData, putData, postData, deleteData } from "~/api/fetchApi";
 import { Loading  } from "~/components/util";
@@ -19,10 +18,10 @@ export const clientLoader = async ({
   if (!idToken){
     return redirect(`/`)
   }else{
-    const data = await getData("/after_school/" + params.school_id + '/instructors', idToken)
-    data.idToken = idToken
-    data.school_id = params.school_id
-    return data
+    return {
+      idToken: idToken,
+      school_id: params.school_id,
+    }
   }
 };
 
@@ -32,13 +31,13 @@ export default function Index() {
     redirect("/");
   }
 
-  const [is_loading, setIsLoading] = useState('')
+  const [is_loading, setIsLoading] = useState(false)
   const [view_retirement, setViewRetirement] = useState(false)
 
   const navigate = useNavigate()
 
   const handleSubmit = async (e:any) => {
-    setIsLoading('submitting')
+    setIsLoading(true)
     const post_data = {
       instructor_id: instructorId,
       instructor_Name: instructorName,
@@ -57,12 +56,12 @@ export default function Index() {
       await putData("/after_school/" + data.school_id + '/instructors', post_data, data.idToken)
     }
     setModalOpenAdd(false)
-    setIsLoading('idle')
+    setIsLoading(false)
     navigate('./')
   }
 
   const handleDeleteSubmit = async (e:any) => {
-    setIsLoading('submitting')
+    setIsLoading(true)
     e.preventDefault();
     const post_data = {
       instructor_id: instructorId,
@@ -71,9 +70,11 @@ export default function Index() {
     }
     await deleteData("/after_school/" + data.school_id + '/instructors', post_data, data.idToken)
     setModalOpenDelete(false)
-    setIsLoading('idle')
+    setIsLoading(false)
     navigate('./')
   }
+
+  const [instructors, setInstructors] = useState<any>([])
 
   const [instructorId, setInstructorId] = useState<string>("")
   const [instructorName, setInstructorName] = useState<string>("")
@@ -115,14 +116,22 @@ export default function Index() {
     setModalOpenDelete(true)
   }
 
-  // 表示順に並び替え
-  data.instructors.sort((a:any, b:any) => a.order - b.order)
+  const search_data = async () => {
+    setIsLoading(true)
 
-  const navigation = useNavigation()
+    const instructor_data = await getData("/after_school/" + data.school_id + '/instructors', data.idToken)
+    setInstructors(instructor_data.instructors.sort((a:any, b:any) => a.order - b.order))
+
+    setIsLoading(false)
+  }
+
+  useEffect(() => {
+    search_data()
+  }, [data.school_id])
 
   return (
-    <div className="border-t-2">
-      {Loading((navigation.state == 'loading' || navigation.state == 'submitting') ? navigation : {state: is_loading})}
+    <div>
+      {is_loading && Loading()}
       <div className="flex justify-between my-2">
         <div>
           <p className="text-2xl font-bold">指導員情報</p>
@@ -132,7 +141,7 @@ export default function Index() {
             <input type="checkbox" id="view_retirement" className="scale-150" onChange={() => setViewRetirement(!view_retirement)}/>
             <label htmlFor="view_retirement" className="ml-2">退職職員表示</label>
           </div>
-          <button type="button" value={"戻る"} className="btn-danger" onClick={() => navigate('/admin/after_school/' + data.school_id)}>戻る</button>
+          <button type="button" value={"戻る"} className="btn-danger" onClick={() => navigate('/after_school_settings/' + data.school_id)}>戻る</button>
         </div>
       </div>
       <table className="w-full text-center mt-3">
@@ -150,7 +159,7 @@ export default function Index() {
           </tr>
         </thead>
         <tbody>
-          {data.instructors.filter((ins:any) => (view_retirement || !ins.retirement_date)).map((ins:any) => (
+          {instructors.filter((ins:any) => (view_retirement || !ins.retirement_date)).map((ins:any) => (
             <tr key={ins.id} className={ins.retirement_date && "bg-gray-300"}>
               <td className="align-middle">{ins.id}</td>
               <td className="align-middle">{ins.name}</td>

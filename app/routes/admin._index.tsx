@@ -3,21 +3,21 @@ import {
   redirect,
   useNavigate,
   Form,
-  useNavigation,
 } from "@remix-run/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getData, postData, putData, deleteData } from "~/api/fetchApi";
 import { getLs } from "~/lib/ls";
 import { Loading  } from "~/components/util";
+import { RightHeader } from "~/components/header";
 
 export const clientLoader = async () => {
   const idToken = getLs('idToken') || ''
   const user_id = getLs('user_id') || ''
+  const user_data = JSON.parse(getLs('user_data') || '{}')
   const data = JSON.parse(getLs('user_data') || '{}')
   data.idToken = idToken
   data.user_id = user_id
-  data.after_schools = await getData("/after_school", idToken)
-  data.users = await getData("/users", idToken)
+  data.user_data = user_data
   return data
 };
 
@@ -29,14 +29,6 @@ export default function Index() {
 
   const navigate = useNavigate()
 
-  const AddAfterSchool = () => {
-    navigate(`./after_school/new`)
-  }
-
-  const EditAfterSchool = (school_id:string) => {
-    navigate(`./after_school/${school_id}`)
-  }
-
   const [modal_type, setModalType] = useState('add')
   const [user_id, setUserId] = useState('')
   const [user_name, setUserName] = useState('')
@@ -44,8 +36,10 @@ export default function Index() {
   const [after_schools, setAfterSchools] = useState([''])
   const [admin_flag, setAdminFlag] = useState(false)
   const [modal_open, setModalOpen] = useState(false)
-  const [is_loading, setIsLoading] = useState('')
-  const [users, setUsers] = useState(data.users.list)
+  const [is_loading, setIsLoading] = useState(false)
+
+  const [after_schools_list, setAfterSchoolsList] = useState([])
+  const [user_list, setUserList] = useState([])
 
   const openModal = (
     modal_type:string = 'add',
@@ -73,7 +67,7 @@ export default function Index() {
   }
 
   const handleSubmit = async (e:any) => {
-    setIsLoading('submitting')
+    setIsLoading(true)
     e.preventDefault()
     const post_data = {
       user_id: user_id,
@@ -92,31 +86,45 @@ export default function Index() {
       const response = await putData(`/user/${user_id}`, post_data, data.idToken)
     }
     const users = await getData("/users", data.idToken)
-    setUsers(users.list)
-    setIsLoading('idle')
+    setUserList(users.list)
+    setIsLoading(false)
     navigate('./')
   }
 
   const DeleteUser = async (user_id:string) => {
-    setIsLoading('submitting')
+    setIsLoading(true)
     const response = await deleteData(`/user/${user_id}`, {}, data.idToken)
     const users = await getData("/users", data.idToken)
-    setUsers(users.list)
-    setIsLoading('idle')
+    setUserList(users.list)
+    setIsLoading(false)
   }
 
-  const navigation = useNavigation()
+  const search_data = async () => {
+    setIsLoading(true)
+    const after_school_data = await getData("/after_school", data.idToken)
+    const user_data = await getData("/users", data.idToken)
+    setAfterSchoolsList(after_school_data.list)
+    setUserList(user_data.list)
+    setIsLoading(false)
+  }
+
+  useEffect(() => {
+    search_data()
+  }, [])
 
   return (
-    <div className="border-t-2 ">
-      {Loading((navigation.state == 'loading' || navigation.state == 'submitting') ? navigation : {state: is_loading})}
-      <div className="flex gap-24 mt-2">
-        <div className="">
-          <p className="text-2xl font-bold">学童一覧</p>
+    <div>
+      {is_loading && Loading()}
+      <div className="flex justify-between">
+        <div className="flex gap-24 py-2">
+          <div className="p-1">
+            <p className="text-2xl font-bold">学童一覧</p>
+          </div>
+          <div className="">
+            <button className="btn btn-primary h-full" onClick={() => navigate(`./after_school/new`)}>学童追加</button>
+          </div>
         </div>
-        <div className="">
-          <button className="btn btn-primary" onClick={AddAfterSchool}>学童追加</button>
-        </div>
+        {RightHeader(data.user_id, data.user_data, )}
       </div>
       <table className="table table-bordered text-center mt-3 w-full">
         <thead>
@@ -129,13 +137,13 @@ export default function Index() {
           </tr>
         </thead>
         <tbody>
-          {data.after_schools.list.map((afs:any) => (
+          {after_schools_list.map((afs:any) => (
             <tr key={afs.school_id}>
               <td className="align-middle">{afs.school_id}</td>
               <td className="align-middle">{afs.school_name}</td>
               <td className="align-middle">{afs.child_count}</td>
               <td className="align-middle">{afs.instructor_count}</td>
-              <td><button className="btn btn-primary" onClick={() => EditAfterSchool(afs.school_id)}>編集</button></td>
+              <td><button className="btn btn-primary" onClick={() => navigate(`./after_school/${afs.school_id}`)}>編集</button></td>
             </tr>
           ))}
         </tbody>
@@ -161,7 +169,7 @@ export default function Index() {
           </tr>
         </thead>
         <tbody>
-          {users.map((user:any) => (
+          {user_list.map((user:any) => (
             <tr key={user.user_id}>
               <td className="col-sm-4 align-middle">{user.user_id}</td>
               <td className="col-sm-4 align-middle">{user.user_name}</td>
@@ -217,7 +225,7 @@ export default function Index() {
                 <div className="mb-3">
                   <label htmlFor="AfterSchoolSelect" className="form-label">管理学童</label>
                   <div id="AfterSchoolSelect">
-                    {data.after_schools.list.map((afs:any) => (
+                    {after_schools_list.map((afs:any) => (
                       <div className="flex items-center mb-4 ml-2" key={afs.school_id}>
                         <input className="check-box-default" type="checkbox" name={`after_school_check_${afs.school_id}`} value={afs.school_id} id={`check_${afs.school_id}`} checked={after_schools.includes(afs.school_id)} onChange={(e) => changeAfterSchools(e)}/>
                         <label className="check-box-label-default" htmlFor={`check_${afs.school_id}`}>{`${afs.school_id}:${afs.school_name}`}</label>

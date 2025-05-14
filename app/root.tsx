@@ -5,12 +5,10 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-  useNavigation,
 } from "@remix-run/react";
 import { LinksFunction } from "@remix-run/node";
 import stylesheet from "./globals.css?url"
 import { Amplify } from "aws-amplify"
-import { Loading } from "./components/util";
 Amplify.configure({
   Auth: {
       Cognito: {
@@ -41,7 +39,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <main className="container px-2">
+        <main className="container px-2 pb-2">
           <Outlet />
         </main>
         <ScrollRestoration />
@@ -54,7 +52,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <>
-      {Loading(useNavigation())}
       <Outlet />
     </>
   );
