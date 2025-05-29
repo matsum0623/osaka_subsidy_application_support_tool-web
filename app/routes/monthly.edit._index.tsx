@@ -269,7 +269,7 @@ export default function Index() {
             </div>
             <div className="flex sm:block w-full border">
               <div className="w-1/4 sm:w-full border-b font-bold p-1">
-                <span className="hidden sm:block">障がい</span>
+                <span className="hidden sm:block">加配</span>
                 <span className="block sm:hidden">障</span>
               </div>
               <div className="w-3/4 sm:w-full px-2"><input className="text-right input-default" name="disability" type="number" value={children_disability} onChange={(e) => setChildrenDisability(parseInt(e.target.value))}/></div>

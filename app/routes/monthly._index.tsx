@@ -184,6 +184,7 @@ export default function Index() {
   const changeParams = async (ym:string, school_id:string) => {
     setIsLoading(true)
     setSearchYM(ym)
+    setDownloadYM(ym)
     setSearchSchoolId(school_id)
     navigate(`/monthly?ym=${ym}&school_id=${school_id}`)
     await search_data(ym, school_id)
@@ -246,7 +247,7 @@ export default function Index() {
             </tr>
             <tr className="row-middle">
               <th className="col-no-right-border">合　計</th>
-              <th className="col-no-right-border">障がい</th>
+              <th className="col-no-right-border">加　配</th>
               <th className="col-no-right-border">医ケア</th>
               <th className="col-no-right-border">支援員</th>
               <th className="col-no-right-border">支以外</th>
@@ -343,7 +344,7 @@ export default function Index() {
                     </tr>
                     <tr className="row-middle">
                         <th className="col-no-right-border py-1">合計</th>
-                        <th className="col-no-right-border py-1">内、障がい児</th>
+                        <th className="col-no-right-border py-1">内、加配</th>
                         <th className="py-1">内、医ケア児</th>
                     </tr>
                     <tr key={'summary'} className="row-middle">
@@ -439,6 +440,9 @@ export default function Index() {
                       <option key={year} value={year}>{year + '年度'}</option>
                     ))}
                   </select>
+                </div>
+                <div>
+                  <p className="text-red-600 text-sm mt-2">※月次報告の児童数、職員は現時点での情報が出力されます。</p>
                 </div>
               </div>
               <div className="modal-footer">
