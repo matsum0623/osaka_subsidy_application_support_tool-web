@@ -166,7 +166,7 @@ export default function Index() {
               <td className="align-middle">{ins.qualification && '○'}</td>
               <td className="align-middle">{ins.additional && '○'}</td>
               <td className="align-middle">{ins.medical_care && '○'}</td>
-              <td>{ins.seiki == '1' ? '正規' : (ins.seiki == '2' ? '非正規' : '')}・{ins.koyou == '1' ? '常勤' : (ins.koyou == '2' ? '非常勤（みなし常勤）' : (ins.koyou == '3' ? '非常勤' : ''))}</td>
+              <td>{ins.seiki == '1' ? '正規' : (ins.seiki == '2' ? '非正規' : '')}・{ins.koyou == '1' ? '常勤' : (ins.koyou == '3' ? '非常勤' : '')}</td>
               <td className="align-middle">{ins.order}</td>
               <td className={!ins.retirement_date ? "hidden" : ""} colSpan={2}>退職済み({ins.retirement_date})</td>
               <td className={ins.retirement_date && "hidden"}><button className="btn btn-primary" onClick={() => (openModal("edit", ins))}>編集</button></td>
@@ -250,10 +250,6 @@ export default function Index() {
                     <span className="radio-inline">
                       <input id="d" className="form-check-input" type="radio" name="koyou" value={'1'} checked={koyou=='1'} onChange={() => setKoyou('1')}/>
                       <label htmlFor="d">常勤</label>
-                    </span>
-                    <span className="radio-inline ml-2">
-                      <input id="e" className="form-check-input" type="radio" name="koyou" value={'2'} checked={koyou=='2'} onChange={() => setKoyou('2')}/>
-                      <label htmlFor="e">非常勤（みなし常勤）</label>
                     </span>
                     <span className="radio-inline ml-2">
                       <input id="f" className="form-check-input" type="radio" name="koyou" value={'3'} checked={koyou=='3'} onChange={() => setKoyou('3')}/>
