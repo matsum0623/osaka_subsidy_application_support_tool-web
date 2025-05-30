@@ -47,6 +47,7 @@ export default function Index() {
       modal_type: modalType,
       seiki: seiki,
       koyou: koyou,
+      hire_date: hire_date,
       order: order,
     }
     e.preventDefault();
@@ -83,6 +84,7 @@ export default function Index() {
   const [medicalCare, setMedicalCare] = useState<boolean>(false)
   const [seiki, setSeiki] = useState<string>('')
   const [koyou, setKoyou] = useState<string>('')
+  const [hire_date, setHireDate] = useState<string>('')
   const [order, setOrder] = useState<number>(9999)
   const [modalType, setModalType] = useState<string>("add")
   const [modalTypeStr, setModalTypeStr] = useState<string>("追加")
@@ -105,6 +107,7 @@ export default function Index() {
     setModalTypeStr(type == 'add' ? '追加' : '編集')
     setSeiki(instructor_info.seiki ? instructor_info.seiki : '2')
     setKoyou(instructor_info.koyou ? instructor_info.koyou : '3')
+    setHireDate(instructor_info.hire_date ? instructor_info.hire_date : '')
     setOrder(instructor_info.order ? instructor_info.order : 99)
     setModalOpenAdd(true)
   }
@@ -153,6 +156,7 @@ export default function Index() {
             <td>障害加算</td>
             <td>医ケア</td>
             <td>雇用・勤務形態</td>
+            <td>雇入れ日</td>
             <td>表示順</td>
             <td></td>
             <td></td>
@@ -167,6 +171,7 @@ export default function Index() {
               <td className="align-middle">{ins.additional && '○'}</td>
               <td className="align-middle">{ins.medical_care && '○'}</td>
               <td>{ins.seiki == '1' ? '正規' : (ins.seiki == '2' ? '非正規' : '')}・{ins.koyou == '1' ? '常勤' : (ins.koyou == '3' ? '非常勤' : '')}</td>
+              <td className="align-middle">{ins.hire_date}</td>
               <td className="align-middle">{ins.order}</td>
               <td className={!ins.retirement_date ? "hidden" : ""} colSpan={2}>退職済み({ins.retirement_date})</td>
               <td className={ins.retirement_date && "hidden"}><button className="btn btn-primary" onClick={() => (openModal("edit", ins))}>編集</button></td>
@@ -179,6 +184,7 @@ export default function Index() {
               <td className="align-middle"></td>
               <td className="align-middle"></td>
               <td className="align-middle"></td>
+              <td></td>
               <td></td>
               <td></td>
               <td><button type="button" value={"追加"} className="btn-add" onClick={() => openModal()}>＋追加</button></td>
@@ -256,6 +262,10 @@ export default function Index() {
                       <label htmlFor="f">非常勤</label>
                     </span>
                   </div>
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="HireDateInput" className="form-label">雇入れ日</label>
+                  <input type="date" name="hire_date" className="input-default" id="HireDateInput" placeholder="雇入れ日" value={hire_date} required onChange={(e) => setHireDate(e.target.value)}/>
                 </div>
                 <div className="mb-3">
                   <label htmlFor="OrderInput" className="form-label">表示順</label>
