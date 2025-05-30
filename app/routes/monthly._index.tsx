@@ -442,7 +442,7 @@ export default function Index() {
                   </select>
                 </div>
                 <div>
-                  <p className="text-red-600 text-sm mt-2">※月次報告の児童数、職員は現時点での情報が出力されます。</p>
+                  <p className="text-red-600 text-sm mt-2">※月次報告の児童数は現時点での情報が出力されます。</p>
                 </div>
               </div>
               <div className="modal-footer">
