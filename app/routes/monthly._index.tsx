@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { getData, putData } from "~/api/fetchApi";
 import { RightHeader } from "~/components/header";
 import { downloadYearList, Loading, viewMonth, viewMonthList, weekday } from "~/components/util"
-import { check_int_plus } from "~/lib/common_check";
+import { check_int_plus, check_float_plus } from "~/lib/common_check";
 import { getLs } from "~/lib/ls";
 
 export default function Index() {
@@ -31,6 +31,7 @@ export default function Index() {
     'open_non_qualification': 0,
     'close_qualification': 0,
     'close_non_qualification': 0,
+    'additional_time': 0,
   })
   const [holidays, setHolidays] = useState<string[]>([])
 
@@ -123,6 +124,7 @@ export default function Index() {
       result.open_non_qualification  += check_int_plus(i[8])
       result.close_qualification     += check_int_plus(i[9])
       result.close_non_qualification += check_int_plus(i[10])
+      result.additional_time         += check_float_plus(i[13])
       return result;
     }, {
       'children': 0,
@@ -132,6 +134,7 @@ export default function Index() {
       'open_non_qualification': 0,
       'close_qualification': 0,
       'close_non_qualification': 0,
+      'additional_time': 0,
     }))
 
     setHolidays(Object.keys(res.holidays))
@@ -263,7 +266,8 @@ export default function Index() {
               <td className="col-no-right-border">{child_summary['open_non_qualification']}</td>
               <td className="col-no-right-border">{child_summary['close_qualification']}</td>
               <td className="col-no-right-border">{child_summary['close_non_qualification']}</td>
-              <td colSpan={3}></td>
+              <td className="col-no-right-border">{child_summary['additional_time']}</td>
+              <td colSpan={2}></td>
             </tr>
           </thead>
           <thead className="table-header-group sm:hidden sticky top-monthly-header bg-white">
