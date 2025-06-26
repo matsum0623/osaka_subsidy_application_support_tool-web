@@ -128,3 +128,13 @@ export function checkInstructor(instData: any, open:any, close:any) {
 export function check_int_plus(val:string): number {
     return parseInt(val) > 0 ? parseInt(val)  : 0
 }
+
+/**
+ * 数値チェック。Floatに変換し1以上であればその値を返す。
+ * それ以外は0を返す。
+ * @param val string
+ * @returns number
+ */
+export function check_float_plus(val:string): number {
+    return parseFloat(val) > 0 ? parseFloat(val)  : 0
+}

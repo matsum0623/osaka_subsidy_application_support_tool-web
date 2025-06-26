@@ -83,10 +83,7 @@ export default function Index() {
   }
 
   const instructorCheck = () => {
-    const open = open_type != '9' ? open_types[open_type].OpenTime : open_time.start
-    const close = open_type != '9' ? open_types[open_type].CloseTime : open_time.end
-    const check_response = checkInstructor(instructors, open, close)
-    setInstChk(check_response.check)
+    setInstChk(checkInstructor(instructors, open_time.start, open_time.end).check)
   }
 
   const setHour = (target:any) => {
@@ -138,8 +135,8 @@ export default function Index() {
 
   const changeAdditional = (id:string, checked:boolean) => {
     instructors[id].additional_check = checked
-    const open = open_type != '9' ? open_types[open_type].OpenTime : open_time.start
-    const close = open_type != '9' ? open_types[open_type].CloseTime : open_time.end
+    const open = open_time.start
+    const close = open_time.end
     const check_response = checkInstructor(instructors, open, close)
     setInstChk(check_response.check)
     setInstructors(instructors)
@@ -250,12 +247,12 @@ export default function Index() {
             </div>
             <div className="flex sm:block w-full border justify-between">
               <div className="hidden sm:block w-1/4 sm:w-full border-b font-bold p-1">開所時間</div>
-              <div className="w-full sm:px-2 py-2 flex justify-center gap-1 sm:gap-2">
-                <input className={open_type != '9' ? "icon-del" : ""} name={"times.open.start"} value={open_time.start} type="time" min={"06:00:00"} max={"22:00:00"} step={"900"}
-                  onChange={(e) => setOpenTime({start: e.target.value, end: open_time.end})} onBlur={() => instructorCheck()} disabled={open_type != '9'}/>
-                <span>～</span>
-                <input className={open_type != '9' ? "icon-del" : ""} name={"times.open.end"} value={open_time.end} type="time" min={"06:00:00"} max={"22:00:00"} step={"900"}
-                  onChange={(e) => setOpenTime({start: open_time.start, end: e.target.value})} onBlur={() => instructorCheck()} disabled={open_type != '9'}/>
+              <div className="w-full sm:px-2 flex justify-center gap-1 sm:gap-2">
+                <input className="input-default" name={"times.open.start"} value={open_time.start} type="time" min={"06:00:00"} max={"22:00:00"} step={"900"}
+                  onChange={(e) => setOpenTime({start: e.target.value, end: open_time.end})} onBlur={() => instructorCheck()} />
+                <span className="py-2">～</span>
+                <input className="input-default" name={"times.open.end"} value={open_time.end} type="time" min={"06:00:00"} max={"22:00:00"} step={"900"}
+                  onChange={(e) => setOpenTime({start: open_time.start, end: e.target.value})} onBlur={() => instructorCheck()} />
               </div>
             </div>
           </div>
