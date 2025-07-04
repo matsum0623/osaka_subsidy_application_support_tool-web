@@ -157,9 +157,9 @@ export default function Index() {
     setIsLoading(false)
   }
 
-  const downloadSummary = async () => {
+  const downloadSummary = async (file_type:string = '') => {
     setIsLoading(true)
-    const report_data = await getData(`/monthly/download/summary?year=${download_y}&school_id=${search_school_id}`, context.id_token)
+    const report_data = await getData(`/monthly/download/summary?year=${download_y}&school_id=${search_school_id}&file_type=${file_type}`, context.id_token)
     const link = anchorRef.current
     if (link) {
       link.setAttribute('href', report_data.url)
@@ -178,6 +178,9 @@ export default function Index() {
         break
       case '3':
         await downloadSummary()
+        break
+      case '4':
+        await downloadSummary('work_summary')
         break
       default:
         break
@@ -428,8 +431,12 @@ export default function Index() {
                     <input id="c" className="form-check-input" type="radio" name="download_type" value={'3'} checked={download_type=='3'} onChange={() => setDownloadType('3')}/>
                     <label htmlFor="c">加配時間</label>
                   </span>
+                  <span className="radio-inline ml-2">
+                    <input id="d" className="form-check-input" type="radio" name="download_type" value={'4'} checked={download_type=='4'} onChange={() => setDownloadType('4')}/>
+                    <label htmlFor="d">勤務サマリ</label>
+                  </span>
                 </div>
-                <div className={"form-group ml-2 flex " + (download_type != '3' ? '' : 'hidden')}>
+                <div className={"form-group ml-2 flex " + (!['3','4'].includes(download_type) ? '' : 'hidden')}>
                   <label htmlFor="download_ym" className="form-label py-2">年月：</label>
                   <select id="download_ym" name="download_ym" className="select w-1/3" value={download_ym} onChange={(e) => setDownloadYM(e.target.value)}>
                     {ym_list.map((item:any) => (
@@ -437,7 +444,7 @@ export default function Index() {
                     ))}
                   </select>
                 </div>
-                <div className={"form-group ml-2 flex " + (download_type == '3' ? '' : 'hidden')} >
+                <div className={"form-group ml-2 flex " + (['3','4'].includes(download_type) ? '' : 'hidden')} >
                   <label htmlFor="download_y" className="form-label py-2">年度：</label>
                   <select id="download_y" name="download_y" className="select w-1/3" value={download_y} onChange={(e) => setDownloadY(parseInt(e.target.value))}>
                     {download_y_list.map((year:any) => (
